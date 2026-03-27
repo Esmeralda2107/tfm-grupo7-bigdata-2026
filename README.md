@@ -82,6 +82,6 @@ La trazabilidad general del repositorio sigue esta secuencia:
 **`datos/limpios/`** → **`notebooks/02_integracion/`** → **`datos/base_datos/`**  
 **`datos/base_datos/`** → **`notebooks/03_dataset_maestro/`** → **`datos/maestro/`**
 
-## 📌 Nota final
+## 📌 Nota
 
 Este repositorio ha sido organizado con fines de **trazabilidad, documentación técnica y reproducibilidad local** del proyecto. Los README incluidos en cada carpeta explican con mayor detalle el contenido y la función de cada etapa dentro del flujo de trabajo.
