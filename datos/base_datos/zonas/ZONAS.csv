@@ -1,0 +1,39 @@
+ID_ZONA,NOMBRE_ZONA,NOMBRE_DISTRITO,AREA_KM2
+MN0101,Financial District-Battery Park City,Manhattan,19.2268
+MN0102,Tribeca-Civic Center,Manhattan,13.5782
+MN0191,The Battery-Governors Island-Ellis Island-Liberty Island,Manhattan,11.9933
+MN0201,SoHo-Little Italy-Hudson Square,Manhattan,12.9168
+MN0202,Greenwich Village,Manhattan,10.6005
+MN0203,West Village,Manhattan,14.4169
+MN0301,Chinatown-Two Bridges,Manhattan,11.5416
+MN0302,Lower East Side,Manhattan,16.4732
+MN0303,East Village,Manhattan,18.9848
+MN0401,Chelsea-Hudson Yards,Manhattan,29.6718
+MN0402,Hell's Kitchen,Manhattan,18.3823
+MN0501,Midtown South-Flatiron-Union Square,Manhattan,14.879
+MN0502,Midtown-Times Square,Manhattan,24.5525
+MN0601,Stuyvesant Town-Peter Cooper Village,Manhattan,5.5756
+MN0602,Gramercy,Manhattan,7.526
+MN0603,Murray Hill-Kips Bay,Manhattan,15.7712
+MN0604,East Midtown-Turtle Bay,Manhattan,13.1381
+MN0661,United Nations,Manhattan,1.0912
+MN0701,Upper West Side-Lincoln Square,Manhattan,15.7974
+MN0702,Upper West Side (Central),Manhattan,25.4107
+MN0703,Upper West Side-Manhattan Valley,Manhattan,13.2005
+MN0801,Upper East Side-Lenox Hill-Roosevelt Island,Manhattan,21.501
+MN0802,Upper East Side-Carnegie Hill,Manhattan,20.0654
+MN0803,Upper East Side-Yorkville,Manhattan,13.645
+MN0901,Morningside Heights,Manhattan,15.9228
+MN0902,Manhattanville-West Harlem,Manhattan,10.7348
+MN0903,Hamilton Heights-Sugar Hill,Manhattan,15.9836
+MN1001,Harlem (South),Manhattan,14.4264
+MN1002,Harlem (North),Manhattan,23.7929
+MN1101,East Harlem (South),Manhattan,16.6539
+MN1102,East Harlem (North),Manhattan,26.1193
+MN1191,Randall's Island,Manhattan,23.4665
+MN1201,Washington Heights (South),Manhattan,21.0277
+MN1202,Washington Heights (North),Manhattan,24.7735
+MN1203,Inwood,Manhattan,14.4369
+MN1291,Highbridge Park,Manhattan,7.7513
+MN1292,Inwood Hill Park,Manhattan,10.0075
+MN6491,Central Park,Manhattan,38.3124
