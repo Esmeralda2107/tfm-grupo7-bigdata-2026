@@ -15,6 +15,6 @@ En esta carpeta se incluyen, entre otros, los siguientes resultados:
 - **`MASTER_DATASET_MANHATTAN_LIMPIO.csv`**: versión depurada para preparación analítica.
 - **`MASTER_DATASET_MANHATTAN_ML.csv`**: versión final del dataset maestro utilizada como base para las etapas posteriores de análisis.
 - **`MASTER_DATASET_MANHATTAN_ZSCORE.csv`**: versión estandarizada del dataset maestro, preparada para su uso en técnicas analíticas comparativas.
-- **`DATASET_REVISION_TOTAL.csv`**: archivo auxiliar de revisión y control de consistencia del proceso de consolidación.
+- **`DATASET_REVISION_TOTAL.zip`**: archivo auxiliar de revisión y control de consistencia del proceso de consolidación, almacenado en formato comprimido por limitaciones de tamaño.
 
 Los archivos aquí almacenados constituyen la **salida final de la fase de construcción de datos** y el punto de partida para las etapas posteriores de **clustering, scoring y escenarios** desarrolladas en el proyecto.
