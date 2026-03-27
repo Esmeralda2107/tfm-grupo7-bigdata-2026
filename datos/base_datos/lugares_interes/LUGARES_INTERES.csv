@@ -1,0 +1,233 @@
+ID_ZONA,CATEGORIA_LUGAR,CANTIDAD_LUGARES
+MN0101,Administracion Publica,12
+MN0101,Comercial y Hoteles,41
+MN0101,Cultura,21
+MN0101,Educacion,25
+MN0101,Monumentos y Plazas,37
+MN0101,Parques y Jardines,23
+MN0101,Residencial,6
+MN0102,Administracion Publica,26
+MN0102,Comercial y Hoteles,3
+MN0102,Cultura,2
+MN0102,Educacion,16
+MN0102,Monumentos y Plazas,8
+MN0102,Parques y Jardines,15
+MN0102,Residencial,1
+MN0191,Administracion Publica,2
+MN0191,Comercial y Hoteles,1
+MN0191,Cultura,2
+MN0191,Educacion,1
+MN0191,Monumentos y Plazas,7
+MN0191,Parques y Jardines,20
+MN0201,Administracion Publica,7
+MN0201,Comercial y Hoteles,12
+MN0201,Cultura,12
+MN0201,Educacion,8
+MN0201,Monumentos y Plazas,3
+MN0201,Parques y Jardines,13
+MN0202,Administracion Publica,3
+MN0202,Comercial y Hoteles,6
+MN0202,Cultura,17
+MN0202,Educacion,91
+MN0202,Monumentos y Plazas,4
+MN0202,Parques y Jardines,11
+MN0202,Residencial,1
+MN0203,Comercial y Hoteles,4
+MN0203,Cultura,7
+MN0203,Educacion,15
+MN0203,Monumentos y Plazas,8
+MN0203,Parques y Jardines,14
+MN0301,Administracion Publica,3
+MN0301,Comercial y Hoteles,4
+MN0301,Cultura,5
+MN0301,Educacion,17
+MN0301,Monumentos y Plazas,8
+MN0301,Parques y Jardines,21
+MN0301,Residencial,35
+MN0302,Administracion Publica,3
+MN0302,Comercial y Hoteles,6
+MN0302,Cultura,6
+MN0302,Educacion,21
+MN0302,Monumentos y Plazas,1
+MN0302,Parques y Jardines,38
+MN0302,Residencial,79
+MN0303,Administracion Publica,4
+MN0303,Comercial y Hoteles,5
+MN0303,Cultura,15
+MN0303,Educacion,38
+MN0303,Monumentos y Plazas,9
+MN0303,Parques y Jardines,54
+MN0303,Residencial,74
+MN0401,Administracion Publica,5
+MN0401,Comercial y Hoteles,21
+MN0401,Cultura,12
+MN0401,Educacion,25
+MN0401,Monumentos y Plazas,8
+MN0401,Parques y Jardines,28
+MN0401,Residencial,26
+MN0402,Administracion Publica,8
+MN0402,Comercial y Hoteles,19
+MN0402,Cultura,15
+MN0402,Educacion,23
+MN0402,Monumentos y Plazas,3
+MN0402,Parques y Jardines,12
+MN0402,Residencial,9
+MN0501,Administracion Publica,8
+MN0501,Comercial y Hoteles,33
+MN0501,Cultura,8
+MN0501,Educacion,29
+MN0501,Monumentos y Plazas,8
+MN0501,Parques y Jardines,5
+MN0502,Administracion Publica,44
+MN0502,Comercial y Hoteles,122
+MN0502,Cultura,74
+MN0502,Educacion,8
+MN0502,Monumentos y Plazas,28
+MN0502,Parques y Jardines,5
+MN0502,Residencial,7
+MN0601,Comercial y Hoteles,1
+MN0601,Parques y Jardines,3
+MN0601,Residencial,57
+MN0602,Administracion Publica,6
+MN0602,Comercial y Hoteles,10
+MN0602,Cultura,6
+MN0602,Educacion,31
+MN0602,Monumentos y Plazas,2
+MN0602,Parques y Jardines,4
+MN0603,Administracion Publica,83
+MN0603,Comercial y Hoteles,19
+MN0603,Cultura,4
+MN0603,Educacion,23
+MN0603,Monumentos y Plazas,11
+MN0603,Parques y Jardines,20
+MN0603,Residencial,18
+MN0604,Administracion Publica,118
+MN0604,Comercial y Hoteles,36
+MN0604,Cultura,5
+MN0604,Educacion,9
+MN0604,Monumentos y Plazas,7
+MN0604,Parques y Jardines,6
+MN0604,Residencial,6
+MN0661,Administracion Publica,6
+MN0661,Monumentos y Plazas,2
+MN0701,Administracion Publica,2
+MN0701,Comercial y Hoteles,19
+MN0701,Cultura,23
+MN0701,Educacion,45
+MN0701,Monumentos y Plazas,11
+MN0701,Parques y Jardines,13
+MN0701,Residencial,28
+MN0702,Administracion Publica,2
+MN0702,Comercial y Hoteles,16
+MN0702,Cultura,8
+MN0702,Educacion,48
+MN0702,Monumentos y Plazas,1
+MN0702,Parques y Jardines,25
+MN0702,Residencial,71
+MN0703,Comercial y Hoteles,6
+MN0703,Cultura,2
+MN0703,Educacion,16
+MN0703,Monumentos y Plazas,1
+MN0703,Parques y Jardines,21
+MN0703,Residencial,32
+MN0801,Administracion Publica,7
+MN0801,Comercial y Hoteles,5
+MN0801,Cultura,9
+MN0801,Educacion,69
+MN0801,Monumentos y Plazas,3
+MN0801,Parques y Jardines,22
+MN0801,Residencial,8
+MN0802,Administracion Publica,23
+MN0802,Comercial y Hoteles,15
+MN0802,Cultura,19
+MN0802,Educacion,46
+MN0802,Monumentos y Plazas,3
+MN0802,Parques y Jardines,3
+MN0802,Residencial,6
+MN0803,Administracion Publica,3
+MN0803,Comercial y Hoteles,1
+MN0803,Educacion,19
+MN0803,Monumentos y Plazas,4
+MN0803,Parques y Jardines,14
+MN0803,Residencial,7
+MN0901,Administracion Publica,1
+MN0901,Cultura,2
+MN0901,Educacion,92
+MN0901,Monumentos y Plazas,2
+MN0901,Parques y Jardines,20
+MN0901,Residencial,18
+MN0902,Administracion Publica,5
+MN0902,Comercial y Hoteles,1
+MN0902,Cultura,3
+MN0902,Educacion,31
+MN0902,Monumentos y Plazas,4
+MN0902,Parques y Jardines,12
+MN0902,Residencial,15
+MN0903,Administracion Publica,1
+MN0903,Comercial y Hoteles,4
+MN0903,Cultura,3
+MN0903,Educacion,8
+MN0903,Monumentos y Plazas,5
+MN0903,Parques y Jardines,41
+MN0903,Residencial,1
+MN1001,Administracion Publica,10
+MN1001,Comercial y Hoteles,3
+MN1001,Cultura,5
+MN1001,Educacion,25
+MN1001,Monumentos y Plazas,7
+MN1001,Parques y Jardines,14
+MN1001,Residencial,20
+MN1002,Administracion Publica,5
+MN1002,Comercial y Hoteles,4
+MN1002,Cultura,5
+MN1002,Educacion,30
+MN1002,Monumentos y Plazas,3
+MN1002,Parques y Jardines,38
+MN1002,Residencial,108
+MN1101,Administracion Publica,3
+MN1101,Comercial y Hoteles,1
+MN1101,Cultura,3
+MN1101,Educacion,43
+MN1101,Monumentos y Plazas,2
+MN1101,Parques y Jardines,23
+MN1101,Residencial,90
+MN1102,Administracion Publica,7
+MN1102,Comercial y Hoteles,5
+MN1102,Cultura,2
+MN1102,Educacion,36
+MN1102,Monumentos y Plazas,1
+MN1102,Parques y Jardines,50
+MN1102,Residencial,90
+MN1191,Administracion Publica,2
+MN1191,Monumentos y Plazas,60
+MN1191,Parques y Jardines,84
+MN1191,Residencial,1
+MN1201,Administracion Publica,4
+MN1201,Comercial y Hoteles,4
+MN1201,Cultura,5
+MN1201,Educacion,31
+MN1201,Monumentos y Plazas,4
+MN1201,Parques y Jardines,18
+MN1201,Residencial,22
+MN1202,Administracion Publica,2
+MN1202,Comercial y Hoteles,1
+MN1202,Cultura,1
+MN1202,Educacion,32
+MN1202,Monumentos y Plazas,3
+MN1202,Parques y Jardines,55
+MN1203,Administracion Publica,7
+MN1203,Comercial y Hoteles,1
+MN1203,Cultura,2
+MN1203,Educacion,16
+MN1203,Monumentos y Plazas,3
+MN1203,Parques y Jardines,18
+MN1203,Residencial,19
+MN1291,Monumentos y Plazas,1
+MN1291,Parques y Jardines,36
+MN1292,Educacion,3
+MN1292,Parques y Jardines,41
+MN1292,Residencial,1
+MN6491,Comercial y Hoteles,1
+MN6491,Cultura,1
+MN6491,Monumentos y Plazas,2
+MN6491,Parques y Jardines,158
