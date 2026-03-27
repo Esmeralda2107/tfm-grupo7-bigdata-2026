@@ -2,6 +2,6 @@
 
 Este directorio contiene la **base de competencia en su versión limpia**, resultado del procesamiento aplicado sobre la fuente original de inspecciones de restaurantes utilizada en el proyecto.
 
-En esta etapa, la información fue depurada y estructurada para conservar únicamente los atributos relevantes para el análisis posterior, incluyendo aspectos relacionados con **identificación del establecimiento, localización, tipología gastronómica y clasificación estratégica de competencia**.
+En esta etapa, la información fue depurada y transformada para conservar únicamente los atributos relevantes para el análisis posterior. El tratamiento incluyó el filtrado territorial de Manhattan, la selección de establecimientos útiles para el estudio y la **clasificación estratégica de la competencia** en categorías analíticas.
 
-Esta base constituye la versión tratada de la dimensión de competencia y sirve como insumo para las etapas posteriores de integración territorial y consolidación del dataset maestro.
+La base resultante incorpora variables relacionadas con **identificación del establecimiento, localización, tipología gastronómica y clasificación de competencia**, constituyendo la versión tratada de esta dimensión para las etapas posteriores de integración territorial y consolidación del dataset maestro.
