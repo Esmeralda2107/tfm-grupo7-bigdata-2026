@@ -1,0 +1,63 @@
+ID_ZONA,TIPO_DIA,VOLUMEN_TOTAL_PASAJEROS,CANTIDAD_ESTACIONES
+MN0101,Fin de Semana,54974,10
+MN0101,Laborable,78390,10
+MN0102,Fin de Semana,36589,6
+MN0102,Laborable,58553,6
+MN0201,Fin de Semana,39477,6
+MN0201,Laborable,51431,6
+MN0202,Fin de Semana,23725,4
+MN0202,Laborable,30640,4
+MN0203,Fin de Semana,16016,3
+MN0203,Laborable,19220,3
+MN0301,Fin de Semana,7408,1
+MN0301,Laborable,8089,1
+MN0302,Fin de Semana,25371,3
+MN0302,Laborable,30606,3
+MN0303,Fin de Semana,18699,2
+MN0303,Laborable,21168,2
+MN0401,Fin de Semana,48740,6
+MN0401,Laborable,65068,6
+MN0402,Fin de Semana,10763,2
+MN0402,Laborable,12340,1
+MN0501,Fin de Semana,83012,9
+MN0501,Laborable,123072,9
+MN0502,Fin de Semana,116060,10
+MN0502,Laborable,143758,10
+MN0602,Fin de Semana,10721,2
+MN0602,Laborable,15133,2
+MN0604,Fin de Semana,27418,2
+MN0604,Laborable,39188,2
+MN0701,Fin de Semana,32314,3
+MN0701,Laborable,49653,3
+MN0702,Fin de Semana,28979,3
+MN0702,Laborable,33442,3
+MN0703,Fin de Semana,12002,3
+MN0703,Laborable,16214,3
+MN0801,Fin de Semana,24025,4
+MN0801,Laborable,24128,4
+MN0802,Fin de Semana,44864,6
+MN0802,Laborable,83903,6
+MN0803,Fin de Semana,10370,1
+MN0803,Laborable,10750,1
+MN0901,Fin de Semana,19214,3
+MN0901,Laborable,28325,3
+MN0902,Fin de Semana,4967,2
+MN0902,Laborable,9269,2
+MN0903,Fin de Semana,12979,3
+MN0903,Laborable,16225,3
+MN1001,Fin de Semana,19445,5
+MN1001,Laborable,22574,5
+MN1002,Fin de Semana,6244,4
+MN1002,Laborable,8831,4
+MN1101,Fin de Semana,11699,3
+MN1101,Laborable,20813,3
+MN1102,Fin de Semana,12042,2
+MN1102,Laborable,19565,2
+MN1201,Fin de Semana,15837,4
+MN1201,Laborable,21219,4
+MN1202,Fin de Semana,16094,6
+MN1202,Laborable,19029,6
+MN1203,Fin de Semana,7311,4
+MN1203,Laborable,9223,4
+MN6491,Fin de Semana,31878,5
+MN6491,Laborable,37713,5
