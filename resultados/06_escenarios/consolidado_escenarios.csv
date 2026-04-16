@@ -1,0 +1,32 @@
+ID_ZONA,NOMBRE_ZONA,CLUSTER,ESC_POTENCIAL_DEMANDA,RANK_DEMANDA,ESC_EFICIENCIA_FLUJO,RANK_FLUJO,ESC_VIABILIDAD_RIESGO,RANK_VIABILIDAD,SCORE_MEDIO,RANKING_GLOBAL,VARIABILIDAD_ENTRE_ESCENARIOS,CONSISTENCIA_ESCENARIOS
+MN0101,Financial District-Battery Park City,1,54.59,2,62.69,1,61.37,5,59.55,2,1.7,Alta consistencia
+MN0102,Tribeca-Civic Center,1,42.11,18,46.03,10,51.96,15,46.7,16,3.3,Consistencia media
+MN0201,SoHo-Little Italy-Hudson Square,1,31.44,29,37.21,16,37.6,27,35.42,25,5.72,Consistencia media
+MN0202,Greenwich Village,1,49.49,5,47.12,7,52.99,14,49.87,5,3.86,Consistencia media
+MN0203,West Village,1,26.11,31,22.55,31,27.56,31,25.41,31,0.0,Alta consistencia
+MN0302,Lower East Side,2,44.8,11,42.67,12,55.81,11,47.76,10,0.47,Alta consistencia
+MN0303,East Village,1,43.11,13,39.18,13,48.15,17,43.48,16,1.89,Alta consistencia
+MN0401,Chelsea-Hudson Yards,1,41.84,20,49.11,6,59.68,6,50.21,7,6.6,Baja consistencia
+MN0402,Hell's Kitchen,1,27.8,30,22.9,30,31.17,28,27.29,30,0.94,Alta consistencia
+MN0501,Midtown South-Flatiron-Union Square,3,44.44,12,58.19,2,47.8,19,50.14,8,6.98,Baja consistencia
+MN0502,Midtown-Times Square,3,38.81,25,53.4,4,28.24,30,40.15,22,11.26,Baja consistencia
+MN0601,Stuyvesant Town-Peter Cooper Village,4,45.3,9,33.18,25,57.27,7,45.25,14,8.06,Baja consistencia
+MN0602,Gramercy,1,40.22,24,33.82,23,43.37,25,39.14,25,0.82,Alta consistencia
+MN0603,Murray Hill-Kips Bay,1,41.58,22,33.31,24,44.01,24,39.63,23,0.94,Alta consistencia
+MN0604,East Midtown-Turtle Bay,1,50.38,4,46.11,9,42.41,26,46.3,12,9.42,Baja consistencia
+MN0701,Upper West Side-Lincoln Square,4,59.23,1,55.02,3,66.82,1,60.36,1,0.94,Alta consistencia
+MN0702,Upper West Side (Central),4,53.45,3,46.59,8,63.84,3,54.63,3,2.36,Alta consistencia
+MN0703,Upper West Side-Manhattan Valley,4,41.06,23,32.77,26,45.71,22,39.85,24,1.7,Alta consistencia
+MN0801,Upper East Side-Lenox Hill-Roosevelt Island,4,41.69,21,37.19,17,47.84,18,42.24,20,1.7,Alta consistencia
+MN0802,Upper East Side-Carnegie Hill,4,48.5,6,53.18,5,51.08,16,50.92,6,4.97,Consistencia media
+MN0803,Upper East Side-Yorkville,4,38.6,26,28.02,29,44.58,23,37.07,28,2.45,Alta consistencia
+MN0901,Morningside Heights,1,45.34,8,44.93,11,66.16,2,52.14,4,3.74,Consistencia media
+MN0902,Manhattanville-West Harlem,2,42.39,16,36.48,19,62.66,4,47.18,12,6.48,Baja consistencia
+MN0903,Hamilton Heights-Sugar Hill,2,45.26,10,37.15,18,57.03,8,46.48,11,4.32,Consistencia media
+MN1001,Harlem (South),2,42.21,17,38.72,15,56.22,9,45.72,14,3.4,Consistencia media
+MN1002,Harlem (North),2,42.66,15,35.87,20,56.13,10,44.89,18,4.08,Consistencia media
+MN1101,East Harlem (South),2,35.21,28,29.78,28,30.79,29,31.93,29,0.47,Alta consistencia
+MN1102,East Harlem (North),2,36.03,27,32.66,27,47.78,20,38.82,27,3.3,Consistencia media
+MN1201,Washington Heights (South),2,42.78,14,34.38,21,46.28,21,41.15,20,3.3,Consistencia media
+MN1202,Washington Heights (North),2,46.18,7,39.06,14,54.75,12,46.66,8,2.94,Alta consistencia
+MN1203,Inwood,2,42.11,18,33.83,22,53.11,13,43.02,19,3.68,Consistencia media
