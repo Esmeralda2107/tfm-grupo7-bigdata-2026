@@ -1,0 +1,1007 @@
+---
+title: "Comparación de clusterización con método ward.D"
+author: "Grupo 7"
+date: "2026"
+output:
+  html_document:
+    df_print: paged
+    toc: TRUE
+    toc_depth: 3
+    number_sections: TRUE
+    toc_float:
+      collapsed: TRUE
+      smooth_scroll: TRUE
+    theme: united
+    highlight: tango
+    code_folding: show
+    fig_caption: TRUE
+    keep_md: FALSE
+---
+
+# Librerías
+
+```{r}
+library(writexl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(factoextra)
+library(cluster)
+library(knitr)
+library(kableExtra)
+library(fmsb)
+library(viridis)
+library(viridisLite)
+library(plotly)
+library(sf)
+```
+
+# Carga de datos
+
+```{r}
+# Configuración de rutas del repositorio
+ruta_input <- "../../datos/maestro/MASTER_DATASET_MANHATTAN_ZSCORE.csv"
+ruta_output <- "../../resultados/04_clustering/Ward.D/manhattan_Ward_k4.xlsx"
+
+# Crear carpeta de salida si no existe
+dir.create(dirname(ruta_output), recursive = TRUE, showWarnings = FALSE)
+
+# Carga de datos
+manhattanz <- read.csv(ruta_input)
+
+manhattan_numeric <- manhattanz %>% select(where(is.numeric)) %>% select(-AREA_KM2)
+
+rownames(manhattan_numeric) <- manhattanz$NOMBRE_ZONA
+
+```
+
+# Prueba de Silhouette/Ward.D
+
+```{r}
+
+metricas_dist <- c("euclidean", "maximum", "manhattan", "canberra", "minkowski")
+
+for (m in metricas_dist) {
+  
+  tryCatch({
+    p <- fviz_nbclust(manhattan_numeric, 
+                      FUNcluster = hcut, 
+                      method = "silhouette", 
+                      k.max = 10,
+                      hc_method = "ward.D", 
+                      hc_metric = m)
+    
+    p_final <- p + 
+      labs(title = paste("Método de Silueta - Distancia:", m),
+           subtitle = "Algoritmo: Hierarchical (Ward.D)",
+           x = "Número de Clústeres (k)",
+           y = "Puntuación Silueta Promedio") + 
+      theme_classic()
+    
+    print(p_final)
+    
+  }, error = function(e) { 
+    message(paste("Error en métrica", m, ":", e$message)) 
+  })
+}
+```
+
+# Prueba de Codo WSS/Ward.D
+
+
+```{r}
+
+hcut_seguro <- function(x, k, ...) {
+  if (k < 2) return(NULL) 
+  factoextra::hcut(x, k, ...)
+}
+
+metodos_enlace <- c("ward.D", "single", "average", "complete")
+metricas_dist  <- c("euclidean", "maximum", "manhattan", "canberra", "minkowski")
+
+for (m in metricas_dist) {
+  
+  tryCatch({
+    p <- fviz_nbclust(manhattan_numeric, 
+                      FUNcluster = hcut_seguro, 
+                      method = "wss", 
+                      hc_method = "ward.D", 
+                      hc_metric = m,
+                      k.max = 10) +
+      labs(title = paste("Método de Codo (Validado) - Distancia:", m),
+           subtitle = "Algoritmo",
+           x = "Número de Clústeres (k)",
+           y = "InerciaIC")
+    
+    print(p)
+  }, error = function(e) { 
+    message(paste("La distancia", m, "no pudo procesarse:", e$message)) 
+  })
+}
+
+```
+
+# Comparación Codo/Silueta
+
+```{r}
+
+metodo_fijo <- "ward.D"
+metricas_dist <- c("euclidean", "maximum", "manhattan", "canberra", "minkowski")
+
+resultados_lista <- list()
+
+for (m in metricas_dist) {
+  
+  tryCatch({
+    res_sil <- fviz_nbclust(manhattan_numeric, hcut, method = "silhouette", 
+                            k.max = 10, hc_method = metodo_fijo, hc_metric = m)
+    
+    k_opt_sil <- res_sil$data$clusters[which.max(res_sil$data$y)]
+    valor_sil <- max(res_sil$data$y)
+    
+    res_wss <- fviz_nbclust(manhattan_numeric, hcut_seguro, method = "wss", 
+                            k.max = 10, hc_method = metodo_fijo, hc_metric = m)
+    
+    resultados_lista[[m]] <- data.frame(
+      Metodo = metodo_fijo,
+      Distancia = m,
+      K_Optimo_Silueta = k_opt_sil,
+      Score_Silueta = round(valor_sil, 4)
+    )
+    
+  }, error = function(e) {
+    message(paste("Error procesando la distancia", m, ":", e$message))
+  })
+}
+
+df_ward_comparativo <- bind_rows(resultados_lista)
+
+print(df_ward_comparativo)
+
+```
+
+# Dendrograma Ward/Euclidean K3
+
+```{r}
+
+dist_max <- dist(manhattan_numeric, method = "euclidean")
+
+modelo_ward <- hclust(dist_max, method = "ward.D")
+
+fviz_dend(modelo_ward, 
+          k = 3, 
+          cex = 0.4,
+          lwd = 0.05,
+          rect = FALSE,
+          rect_fill = FALSE,
+          main = "Dendrograma: Agrupamiento Jerarquico de Ward.D (Euclidean)",
+          sub = "Metrica: Euclidean | Metodo: Ward",
+          xlab = "Zonas Geograficas",
+          ylab = "Nivel de Disimilitud")
+
+```
+
+
+```{r}
+dist_max <- dist(manhattan_numeric, method = "euclidean")
+modelo_ward <- hclust(dist_max, method = "ward.D")
+plot(modelo_ward, 
+     main = "Dendrograma de Manhattan (Euclidean + Ward.D)",
+     sub = "Distancia: Euclidean | Metodo: Ward",
+     xlab = "Barrios",
+     ylab = "Altura",
+     cex = 0.6)
+rect.hclust(modelo_ward, k = 3, border = "red")
+
+```
+
+## Zonas por cluster
+
+```{r}
+
+ward_dendro<-cutree(modelo_ward,k=3)
+
+neo_wd<-cbind(ward_dendro)
+
+resumen_clustersk3 <- data.frame(
+  Zona = rownames(manhattan_numeric),
+  Cluster = as.vector(neo_wd))
+
+tabla_zonas_vertical <- resumen_clustersk3 %>%
+  group_by(Cluster) %>%
+  mutate(id = row_number()) %>%
+  pivot_wider(names_from = Cluster, 
+              values_from = Zona,
+              names_prefix = "Clúster ") %>%
+  select(-id)
+
+tabla_zonas_vertical %>%
+  mutate(across(everything(), ~replace_na(.x, ""))) %>%
+  kable(caption = "Distribución de Zonas de Manhattan por Clúster") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = T, 
+                position = "center") %>%
+  row_spec(0, bold = T, color = "white", background = "#2c3e50")
+
+```
+
+
+Centroides
+
+Función de centroides
+
+```{r}
+
+centroide <- function(num.cluster, datos, clusters) {
+  ind <- (clusters == num.cluster)
+  return(colMeans(datos[ind,], na.rm = TRUE))
+}
+
+centroide_c1 <- centroide(1, manhattan_numeric, ward_dendro)
+
+centroide_c2 <- centroide(2, manhattan_numeric, ward_dendro)
+
+centroide_c3 <- centroide(3, manhattan_numeric, ward_dendro)
+
+centro.cluster1 <- data.frame("cluster" = "C1", "variable" = names(centroide_c1), "valor" = as.numeric(centroide_c1))
+
+centro.cluster2 <- data.frame("cluster" = "C2", "variable" = names(centroide_c2), "valor" = as.numeric(centroide_c2))
+
+centro.cluster3 <- data.frame("cluster" = "C3", "variable" = names(centroide_c3), "valor" = as.numeric(centroide_c3))
+
+centros <- rbind(centro.cluster1, centro.cluster2, centro.cluster3)
+
+```
+
+
+
+Centroide 1
+
+```{r}
+
+print(centro.cluster1)
+
+# Gráfico de importancia de variable cluster 1
+
+color_paleta <- c("#ECD078","#D95B43","#C02942","#542437","#53777A")
+
+datos_c1 <- centros[centros$cluster == "C1", ]
+
+ggplot(datos_c1, aes(x = variable, y = valor, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rep(color_paleta, length.out = nrow(datos_c1))) +
+  labs(x = "Importancia de la Variable", 
+       y = "Valor Normalizado (Cluster 1)",
+       title = "Perfil Detallado del Cluster 1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")+
+  coord_flip()
+```
+
+
+Centroide 2
+
+```{r}
+
+print(centro.cluster2)
+
+# Gráfico de importancia de variable cluster 2
+
+color_paleta <- c("#ECD078","#D95B43","#C02942","#542437","#53777A")
+
+datos_c2 <- centros[centros$cluster == "C2", ]
+
+ggplot(datos_c2, aes(x = variable, y = valor, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rep(color_paleta, length.out = nrow(datos_c1))) +
+  labs(x = "Importancia de la Variable", 
+       y = "Valor Normalizado (Cluster 2)",
+       title = "Perfil Detallado del Cluster 2") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")+
+  coord_flip()
+```
+
+Centroide 3
+
+```{r}
+
+print(centro.cluster3)
+
+# Gráfico de importancia de variable cluster 3
+
+color_paleta <- c("#ECD078","#D95B43","#C02942","#542437","#53777A")
+
+datos_c3 <- centros[centros$cluster == "C3", ]
+
+ggplot(datos_c3, aes(x = variable, y = valor, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rep(color_paleta, length.out = nrow(datos_c1))) +
+  labs(x = "Importancia de la Variable", 
+       y = "Valor Normalizado (Cluster 3)",
+       title = "Perfil Detallado del Cluster 3") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")+
+  coord_flip()
+```
+
+Cuadro comparativo clusteres
+
+```{r}
+
+conteo_zonas <- resumen_clustersk3 %>% 
+  group_by(Cluster) %>% 
+  summarise(Cantidad_de_Zonas = n())
+
+
+dataset_perfilado <- manhattanz %>%
+  mutate(Cluster = as.factor(ward_dendro))
+
+
+caracterizacion_cuantitativa <- dataset_perfilado %>%
+  group_by(Cluster) %>%
+  summarise(across(where(is.numeric) & -AREA_KM2, 
+                   list(media = ~mean(.x, na.rm = TRUE))))
+
+
+caracterizacion_transpuesta <- caracterizacion_cuantitativa %>%
+    pivot_longer(cols = -Cluster, 
+               names_to = "Variable", 
+               values_to = "Valor") %>%
+    pivot_wider(names_from = Cluster, 
+              values_from = Valor,
+              names_prefix = "Cluster ")
+
+caracterizacion_transpuesta %>%
+  kable(caption = "Perfil Comparativo de Variables por Cluster", 
+        digits = 2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                position = "center") %>%
+  row_spec(0, bold = T, color = "white", background = "#2c3e50") %>%
+  column_spec(1, bold = T, border_right = T)
+
+```
+
+## Gráfico comparativo K=3
+
+```{r}
+
+for (x in unique(centros$variable)) {
+  aux <- centros[centros$variable == x, "valor"]
+  aux <- aux - min(aux)
+  aux <- aux / max(aux)
+  centros[centros$variable == x, "valor"] <- aux
+}
+
+ggplot(data = centros[order(centros$variable), ],
+       aes(x = variable, y = valor, group = cluster)) + 
+  geom_point(aes(colour = cluster)) +
+  geom_polygon(aes(colour = cluster, fill = cluster), alpha = 0.2) +
+  ylim(-0.1, 1) + labs(x = "", y = "") + theme_minimal() +
+  theme(axis.ticks.y = element_blank(), axis.text.y = element_blank()) +
+  annotate('text', x = 0, y = c(0, 0.25, 0.5, 0.75, 1),
+           label = c("0%", "25%", "50%", "75%", "100%"), color = "darkgray")+
+  coord_polar()
+```
+
+```{r}
+library(plotly)
+
+# 1. Preparar los datos
+# Plotly requiere que el primer punto se repita al final para cerrar el polígono
+centros_plotly <- centros[order(centros$cluster, centros$variable), ]
+
+# 2. Crear el gráfico interactivo
+p <- plot_ly(type = 'scatterpolar', fill = 'toself') 
+
+# Añadimos cada cluster como una traza independiente
+for(cl in unique(centros_plotly$cluster)){
+  df_cl <- centros_plotly[centros_plotly$cluster == cl, ]
+  
+  # Añadimos el primer registro al final para cerrar el círculo
+  df_cl <- rbind(df_cl, df_cl[1,])
+  
+  p <- p %>% add_trace(
+    r = df_cl$valor,
+    theta = df_cl$variable,
+    name = paste("Cluster", cl),
+    mode = 'lines+markers',
+    fillcolor = NULL, # Plotly asignará colores automáticamente o puedes definirlos
+    hoverinfo = "text",
+    text = ~paste0("Variable: ", df_cl$variable, 
+                   "<br>Valor: ", round(df_cl$valor * 100, 2), "%")
+  )
+}
+
+# 3. Ajustar el diseño (layout)
+p <- p %>% layout(
+  polar = list(
+    radialaxis = list(
+      visible = T,
+      range = c(0, 1),
+      tickformat = ".0%", # Muestra los valores como porcentajes
+      tickfont = list(size = 10, color = "gray")
+    ),
+    angularaxis = list(
+      tickfont = list(size = 11),
+      rotation = 90, # Ajusta donde empieza el gráfico
+      direction = "clockwise"
+    )
+  ),
+  showlegend = TRUE
+)
+
+p
+```
+
+
+## Interpretación de Clusters K3
+
+En este nivel de agrupación, el modelo Ward.D prioriza la cohesión estructural de la isla, dividiéndola en tres grandes perfiles socio-urbanos.
+
+**Clúster 1:Residencial-Corporativo de Alto Valor Inmobiliario**
+
+Este Cluster 1 representa el núcleo de alta densidad residencial y estabilidad económica de los sectores más consolidados de Manhattan, abarcando desde el Financial District hasta el Upper East y West Side. Geográficamente, el grupo se concentra en los barrios que definen el corredor central y las zonas ribereñas de alto standing, caracterizándose por una estructura urbana donde la vivienda de calidad y la proximidad a centros de servicios son primordiales. A diferencia de otras zonas, este cluster se define por un equilibrio entre la vida profesional y doméstica, donde la importancia del nivel de ingresos y el valor del suelo refleja un entorno de alta demanda y perfil socioeconómico elevado.
+
+Desde la perspectiva de la composición demográfica, las variables Ingreso Mediano del Hogar (0.54) y Alquiler por Pie Cuadrado (0.25) presentan una relevancia positiva significativa. Esto define técnicamente al cluster como un área de alto poder adquisitivo y resiliencia inmobiliaria. En contraste, el modelo asigna valores negativos al Tamaño de Hogar Promedio (-0.47) y al Porcentaje de Hispanos (-0.57), lo que indica una estructura familiar más pequeña y una mayor diversidad étnica en comparación con los sectores del norte. La Edad Mediana (0.05) sugiere una población madura y profesionalmente activa que busca la cercanía a sus lugares de trabajo.
+
+En cuanto a la actividad económica y el entorno físico, el cluster muestra una relevancia moderada en Lugares de Oficinas (0.24) y Población por $km^{2}$ (0.18). Técnicamente, esto lo clasifica como un territorio de uso mixto, donde la densidad poblacional no compromete la calidad de vida. Es notable la baja importancia de variables de conflicto o delincuencia, lo que describe un ecosistema seguro y predecible. La variable de Competencia Indirecta (0.16) indica una presencia comercial estable y de nicho que sirve a una población residente con altos estándares de consumo, operando dentro de los circuitos más exclusivos de la ciudad.
+
+Zonas asignadas:
+
+```{r}
+barrios_c1 <- resumen_clustersk3 %>% 
+  filter(Cluster == 1) %>% 
+  pull(Zona)
+
+print(barrios_c1)
+```
+
+**Clúster 2: Centro Residencial y Diverso de Manhattan**
+
+Este Cluster 2 constituye el centro residencial demográfico y cultural del norte de Manhattan y sectores específicos como el Lower East Side. Geográficamente, el grupo se concentra en barrios de fuerte identidad comunitaria como Harlem, Washington Heights e Inwood. A diferencia de los sectores financieros, este cluster se caracteriza por una estructura de vivienda intensiva y una vida social profundamente arraigada, donde la importancia máxima de la ocupación y la composición del hogar refleja un entorno de familias numerosas y una cohesión cultural vibrante.
+
+Desde la perspectiva demográfica y social, las variables Porcentaje de Hispanos (1.23), Tamaño de Hogar Promedio (1.15) y Tasa de Ocupación (0.96) presentan una importancia absoluta. Esto define técnicamente al cluster como un área con una base cultural homogénea y una de las mayores densidades de habitantes por unidad de vivienda en la isla. En contraste, el modelo asigna una importancia negativa acentuada al Ingreso Mediano del Hogar (-1.21) y al Alquiler por Pie Cuadrado (-0.49), lo que indica que el factor económico de lujo no es el motor que agrupa a estos barrios, sino sus características de convivencia y arraigo. La Edad Mediana (-0.11) confirma una población joven y dinámica.
+
+En cuanto a la actividad económica, el cluster muestra una relevancia en Lugares Residenciales (0.32) y un nivel nulo de centros corporativos, lo que lo clasifica como un territorio eminentemente doméstico. Es notable la nula importancia de Lugares de Oficinas (-0.42) y Lugares de Comercio (-0.40) en términos de densidad por $km^{2}$, describiendo una economía de barrio que no depende de grandes cadenas, sino del comercio local. Finalmente, el perfil de seguridad destaca por una importancia alta en Delito_Otros_KM2 (1.00), sugiriendo que la alta densidad poblacional y la vida en la calle se traducen en una mayor frecuencia de incidentes generales, operando fuera de las dinámicas corporativas.
+
+
+Zonas asignadas: 
+
+```{r}
+barrios_c2 <- resumen_clustersk3 %>% 
+  filter(Cluster == 2) %>% 
+  pull(Zona)
+
+print(barrios_c2)
+```
+
+**Clúster 3: Alta Intensidad Comercial y Movilidad **
+
+Este Cluster 3 representa el nodo crítico de actividad comercial y conectividad masiva de la ciudad, centrado exclusivamente en el eje de Midtown y Times Square. Geográficamente, el grupo se limita a los sectores de mayor tránsito global, funcionando como el motor económico y turístico de Manhattan. A diferencia de los clusters residenciales, este grupo se caracteriza por una infraestructura diseñada para la población flotante, donde la importancia máxima de la movilidad y el comercio refleja un entorno de actividad ininterrumpida y una densidad de servicios sin precedentes.
+
+Desde la perspectiva del entorno físico y flujo, las variables Movilidad Promedio Diaria (3.00) y Cantidad de Estaciones (2.26) presentan valores extremos. Esto define técnicamente al cluster no como un barrio de residencia, sino como un "hub" de transporte y consumo. En contraste, el modelo asigna la importancia más baja a la Población por $km^{2}$ (-1.71) y al Tamaño del Hogar (-1.25), confirmando que el uso del suelo está casi totalmente dedicado a fines no domésticos. Es un área de baja densidad residencial pero de altísima saturación funcional, donde el espacio se optimiza para el flujo de personas y mercancías.
+
+En cuanto a la actividad económica, el cluster muestra una relevancia masiva en Lugares de Comercio (2.24) y Competencia Indirecta (2.48). Técnicamente, esto lo posiciona como el mercado más competitivo y denso de la ciudad. Sin embargo, este dinamismo impacta directamente en el perfil de seguridad, registrando una importancia máxima en Delito de Propiedad (3.31) y Delito de Transporte (2.08). Estos valores no sugieren inseguridad residencial, sino la vulnerabilidad propia de zonas con millones de visitantes diarios. En resumen, el perfil técnico de este Cluster 3 es el de un ecosistema comercial e infraestructural extremo, operando como el pulmón funcional de la metrópoli.
+
+Zonas asignadas:
+
+```{r}
+barrios_c3 <- resumen_clustersk3 %>% 
+  filter(Cluster == 3) %>% 
+  pull(Zona)
+
+print(barrios_c3)
+```
+## Mapa Temático K=3
+
+```{r}
+url_geojson <- "https://data.cityofnewyork.us/resource/9nt8-h7nd.geojson"
+nyc_map <- st_read(url_geojson, quiet = TRUE)
+
+manhattan_map <- nyc_map %>% 
+  filter(boroname == "Manhattan")
+
+resumen_k3_mapa <- resumen_clustersk3 %>% 
+  mutate(Zona = gsub("^Chinatown$", "Chinatown-Two Bridges", Zona))
+
+mapa_final <- manhattan_map %>%
+  left_join(resumen_k3_mapa, by = c("ntaname" = "Zona"))
+
+ggplot(data = mapa_final) +
+  geom_sf(aes(fill = as.factor(Cluster)), color = "white", size = 0.1) +
+  scale_fill_manual(
+    values = c("1" = "#440154FF", "2" = "#21908CFF", "3" = "#FDE725FF"),
+    name = "Cluster",
+    na.value = "#D3D3D3",
+    labels = c("C1", "C2", "C3", "Sin Datos")
+  ) +
+  labs(
+    title = "Distribucion Espacial de Clusteres en Manhattan",
+    subtitle = "Zonas coloreadas segun perfil socio-urbano (K=3)",
+    caption = "Nota: Central Park y zonas costeras aparecen en gris por ausencia de datos residenciales."
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5, margin = margin(b = 10)),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "darkslategrey", margin = margin(b = 20)),
+    plot.caption = element_text(size = 9, hjust = 0.5, face = "italic", color = "grey30", margin = margin(t = 15)),
+    legend.position = "right",
+    legend.title = element_text(face = "bold")
+  )
+```
+
+```{r}
+mapa_final_interactivo <- mapa_final %>%
+  mutate(texto_hover = paste0("<b>Zona:</b> ", ntaname, 
+                              "<br><b>Cluster:</b> ", ifelse(is.na(Cluster), "Sin Datos", Cluster)))
+
+mapa_plotly <- ggplot(data = mapa_final_interactivo) +
+  geom_sf(aes(fill = as.factor(Cluster), text = texto_hover), color = "white", size = 0.1) +
+  scale_fill_viridis_d(option = "viridis", name = "Cluster", na.value = "#D3D3D3") +
+  theme_void() +
+  labs(title = "Mapa Interactivo de Clusteres de Manhattan")
+
+ggplotly(mapa_plotly, tooltip = "text") %>%
+  layout(title = list(text = paste0('Distribucion Espacial de Clusteres en Manhattan K=3')))
+```
+
+
+
+
+
+# Dendrograma Ward/Euclidean K4
+
+```{r}
+
+dist_max <- dist(manhattan_numeric, method = "euclidean")
+
+modelo_ward <- hclust(dist_max, method = "ward.D")
+
+fviz_dend(modelo_ward, 
+          k = 4, 
+          cex = 0.4,
+          lwd = 0.05,
+          rect = FALSE,
+          rect_fill = FALSE,
+          main = "Dendrograma: Agrupamiento Jerarquico de Ward.D (Euclidean)",
+          sub = "Metrica: Euclidean | Metodo: Ward",
+          xlab = "Zonas Geograficas",
+          ylab = "Nivel de Disimilitud")
+
+```
+
+
+```{r}
+dist_max <- dist(manhattan_numeric, method = "euclidean")
+modelo_ward <- hclust(dist_max, method = "ward.D")
+
+plot(modelo_ward, 
+     main = "Dendrograma de Manhattan (Euclidean + Ward.D)",
+     sub = "Distancia: Euclidean | Metodo: Ward",
+     xlab = "Barrios",
+     ylab = "Altura",
+     cex = 0.6)
+
+rect.hclust(modelo_ward, k = 4, border = "red")
+```
+
+## Zonas por cluster
+
+```{r}
+
+ward_dendro<-cutree(modelo_ward,k=4)
+
+neo_wd<-cbind(ward_dendro)
+
+resumen_clusters <- data.frame(
+  Zona = rownames(manhattan_numeric),
+  Cluster = as.vector(neo_wd))
+
+tabla_zonas_vertical <- resumen_clusters %>%
+  group_by(Cluster) %>%
+  mutate(id = row_number()) %>%
+  pivot_wider(names_from = Cluster, 
+              values_from = Zona,
+              names_prefix = "Clúster ") %>%
+  select(-id)
+
+tabla_zonas_vertical %>%
+  mutate(across(everything(), ~replace_na(.x, ""))) %>%
+  kable(caption = "Distribución de Zonas de Manhattan por Clúster") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = T, 
+                position = "center") %>%
+  row_spec(0, bold = T, color = "white", background = "#2c3e50")
+
+```
+
+
+Centroides
+
+Función de centroides
+
+```{r}
+
+centroide <- function(num.cluster, datos, clusters) {
+  ind <- (clusters == num.cluster)
+  return(colMeans(datos[ind,], na.rm = TRUE))
+}
+
+centroide_c1 <- centroide(1, manhattan_numeric, ward_dendro)
+
+centroide_c2 <- centroide(2, manhattan_numeric, ward_dendro)
+
+centroide_c3 <- centroide(3, manhattan_numeric, ward_dendro)
+
+centroide_c4 <- centroide(4, manhattan_numeric, ward_dendro)
+
+centro.cluster1 <- data.frame("cluster" = "C1", "variable" = names(centroide_c1), "valor" = as.numeric(centroide_c1))
+
+centro.cluster2 <- data.frame("cluster" = "C2", "variable" = names(centroide_c2), "valor" = as.numeric(centroide_c2))
+
+centro.cluster3 <- data.frame("cluster" = "C3", "variable" = names(centroide_c3), "valor" = as.numeric(centroide_c3))
+
+centro.cluster4 <- data.frame("cluster" = "C4", "variable" = names(centroide_c4), "valor" = as.numeric(centroide_c4))
+
+centros <- rbind(centro.cluster1, centro.cluster2, centro.cluster3, centro.cluster4)
+```
+
+
+Centroide 1
+
+```{r}
+
+print(centro.cluster1)
+
+# Gráfico de importancia de variable cluster 1
+
+color_paleta <- c("#ECD078","#D95B43","#C02942","#542437","#53777A")
+
+datos_c1 <- centros[centros$cluster == "C1", ]
+
+ggplot(datos_c1, aes(x = variable, y = valor, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rep(color_paleta, length.out = nrow(datos_c1))) +
+  labs(x = "Importancia de la Variable", 
+       y = "Valor Normalizado (Cluster 1)",
+       title = "Perfil Detallado del Cluster 1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")+
+  coord_flip()
+```
+
+Centroide 2
+
+```{r}
+
+print(centro.cluster2)
+
+# Gráfico de importancia de variable cluster 2
+
+color_paleta <- c("#ECD078","#D95B43","#C02942","#542437","#53777A")
+
+datos_c2 <- centros[centros$cluster == "C2", ]
+
+ggplot(datos_c2, aes(x = variable, y = valor, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rep(color_paleta, length.out = nrow(datos_c1))) +
+  labs(x = "Importancia de la Variable", 
+       y = "Valor Normalizado (Cluster 2)",
+       title = "Perfil Detallado del Cluster 2") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")+
+  coord_flip()
+```
+
+Centroide 3
+
+
+```{r}
+
+print(centro.cluster3)
+
+# Gráfico de importancia de variable cluster 3
+
+color_paleta <- c("#ECD078","#D95B43","#C02942","#542437","#53777A")
+
+datos_c3 <- centros[centros$cluster == "C3", ]
+
+ggplot(datos_c3, aes(x = variable, y = valor, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rep(color_paleta, length.out = nrow(datos_c1))) +
+  labs(x = "Importancia de la Variable", 
+       y = "Valor Normalizado (Cluster 3)",
+       title = "Perfil Detallado del Cluster 3") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")+
+  coord_flip()
+```
+
+Centroide 4
+
+```{r}
+print(centro.cluster4)
+
+# Gráfico de importancia de variable cluster 3
+
+color_paleta <- c("#ECD078","#D95B43","#C02942","#542437","#53777A")
+
+datos_c4 <- centros[centros$cluster == "C4", ]
+
+ggplot(datos_c4, aes(x = variable, y = valor, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rep(color_paleta, length.out = nrow(datos_c1))) +
+  labs(x = "Importancia de la Variable", 
+       y = "Valor Normalizado (Cluster 4)",
+       title = "Perfil Detallado del Cluster 4") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")+
+  coord_flip()
+```
+
+Cuadro comparativo clusteres
+
+```{r}
+
+conteo_zonas <- resumen_clusters %>% 
+  group_by(Cluster) %>% 
+  summarise(Cantidad_de_Zonas = n())
+
+
+dataset_perfilado <- manhattanz %>%
+  mutate(Cluster = as.factor(ward_dendro))
+
+
+caracterizacion_cuantitativa <- dataset_perfilado %>%
+  group_by(Cluster) %>%
+  summarise(across(where(is.numeric) & -AREA_KM2, 
+                   list(media = ~mean(.x, na.rm = TRUE))))
+
+
+caracterizacion_transpuesta <- caracterizacion_cuantitativa %>%
+    pivot_longer(cols = -Cluster, 
+               names_to = "Variable", 
+               values_to = "Valor") %>%
+    pivot_wider(names_from = Cluster, 
+              values_from = Valor,
+              names_prefix = "Cluster ")
+
+caracterizacion_transpuesta %>%
+  kable(caption = "Perfil Comparativo de Variables por Cluster", 
+        digits = 2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = F, 
+                position = "center") %>%
+  row_spec(0, bold = T, color = "white", background = "#2c3e50") %>%
+  column_spec(1, bold = T, border_right = T)
+
+```
+
+## Gráfico comparativo K=4
+
+
+```{r}
+
+for (x in unique(centros$variable)) {
+  aux <- centros[centros$variable == x, "valor"]
+  aux <- aux - min(aux)
+  aux <- aux / max(aux)
+  centros[centros$variable == x, "valor"] <- aux
+}
+
+ggplot(data = centros[order(centros$variable), ],
+       aes(x = variable, y = valor, group = cluster)) + 
+  geom_point(aes(colour = cluster)) +
+  geom_polygon(aes(colour = cluster, fill = cluster), alpha = 0.2) +
+  ylim(-0.1, 1) + labs(x = "", y = "") + theme_minimal() +
+  theme(axis.ticks.y = element_blank(), axis.text.y = element_blank()) +
+  annotate('text', x = 0, y = c(0, 0.25, 0.5, 0.75, 1),
+           label = c("0%", "25%", "50%", "75%", "100%"), color = "darkgray")+
+  coord_polar()
+```
+
+```{r}
+library(plotly)
+
+# 1. Preparar los datos
+# Plotly requiere que el primer punto se repita al final para cerrar el polígono
+centros_plotly <- centros[order(centros$cluster, centros$variable), ]
+
+# 2. Crear el gráfico interactivo
+p <- plot_ly(type = 'scatterpolar', fill = 'toself') 
+
+# Añadimos cada cluster como una traza independiente
+for(cl in unique(centros_plotly$cluster)){
+  df_cl <- centros_plotly[centros_plotly$cluster == cl, ]
+  
+  # Añadimos el primer registro al final para cerrar el círculo
+  df_cl <- rbind(df_cl, df_cl[1,])
+  
+  p <- p %>% add_trace(
+    r = df_cl$valor,
+    theta = df_cl$variable,
+    name = paste("Cluster", cl),
+    mode = 'lines+markers',
+    fillcolor = NULL, # Plotly asignará colores automáticamente o puedes definirlos
+    hoverinfo = "text",
+    text = ~paste0("Variable: ", df_cl$variable, 
+                   "<br>Valor: ", round(df_cl$valor * 100, 2), "%")
+  )
+}
+
+# 3. Ajustar el diseño (layout)
+p <- p %>% layout(
+  polar = list(
+    radialaxis = list(
+      visible = T,
+      range = c(0, 1),
+      tickformat = ".0%", # Muestra los valores como porcentajes
+      tickfont = list(size = 10, color = "gray")
+    ),
+    angularaxis = list(
+      tickfont = list(size = 11),
+      rotation = 90, # Ajusta donde empieza el gráfico
+      direction = "clockwise"
+    )
+  ),
+  showlegend = TRUE
+)
+
+p
+```
+
+
+## Interpretación de Clusters K4
+
+Al aumentar a k=4, el algoritmo separa el Clúster 2 original, permitiendo diferenciar entre barrios residenciales estándar y aquellos con características más premium o de alta densidad habitacional.
+
+**Clúster 1: Residencial-Corporativo de Alto Valor Inmobiliario**
+
+Este nuevo Clúster 1 representa el epicentro de la vida profesional joven y la actividad corporativa del Downtown y Chelsea. Geográficamente, se concentra en barrios de perfil cosmopolita como el Financial District, Tribeca, SoHo y Greenwich Village. A diferencia de otras zonas residenciales, este grupo se caracteriza por una estructura urbana funcional donde el trabajo y el ocio convergen, reflejando un entorno de alta movilidad social y una baja densidad de convivencia doméstica tradicional.
+
+Desde la perspectiva demográfica, las variables Edad Mediana (-0.47) y Tamaño de Hogar Promedio (-0.65) presentan una importancia negativa crítica. Esto define técnicamente al clúster como un área de adultos jóvenes y hogares unipersonales. En contraste, el modelo asigna una relevancia positiva al Ingreso Mediano (0.50) y al Alquiler por Pie Cuadrado (0.15), lo que indica que el motor de este grupo es la capacidad económica de una fuerza laboral cualificada que prioriza la ubicación estratégica sobre el espacio habitacional.
+
+En cuanto a la actividad económica, el clúster muestra una alta relevancia en Lugares de Oficinas (0.56) y Competencia Indirecta (0.55). Técnicamente, esto lo clasifica como un territorio de uso de suelo predominantemente comercial y corporativo. Es notable la baja importancia de Población por $km^{2}$ (-0.35) y Lugares Residenciales (-0.42), describiendo una zona que, aunque vibrante, no funciona como un núcleo habitacional denso. Finalmente, el perfil de seguridad registra una incidencia moderada en Delito de Transporte (0.44), vinculada al flujo constante de trabajadores y visitantes.
+
+Zonas asignadas:
+
+```{r}
+barrios_c1 <- resumen_clusters %>% 
+  filter(Cluster == 1) %>% 
+  pull(Zona)
+
+print(barrios_c1)
+```
+
+**Clúster 2: Centro Residencial y Diverso de Manhattan**
+
+Este Cluster 2 constituye el centro residencial demográfico y cultural del norte de Manhattan y sectores específicos como el Lower East Side. Geográficamente, el grupo se concentra en barrios de fuerte identidad comunitaria como Harlem, Washington Heights e Inwood. A diferencia de los sectores financieros, este cluster se caracteriza por una estructura de vivienda intensiva y una vida social profundamente arraigada, donde la importancia máxima de la ocupación y la composición del hogar refleja un entorno de familias numerosas y una cohesión cultural vibrante.
+
+Desde la perspectiva demográfica y social, las variables Porcentaje de Hispanos (1.23), Tamaño de Hogar Promedio (1.15) y Tasa de Ocupación (0.96) presentan una importancia absoluta. Esto define técnicamente al cluster como un área con una base cultural homogénea y una de las mayores densidades de habitantes por unidad de vivienda en la isla. En contraste, el modelo asigna una importancia negativa acentuada al Ingreso Mediano del Hogar (-1.21) y al Alquiler por Pie Cuadrado (-0.49), lo que indica que el factor económico de lujo no es el motor que agrupa a estos barrios, sino sus características de convivencia y arraigo. La Edad Mediana (-0.11) confirma una población joven y dinámica.
+
+En cuanto a la actividad económica, el cluster muestra una relevancia en Lugares Residenciales (0.32) y un nivel nulo de centros corporativos, lo que lo clasifica como un territorio eminentemente doméstico. Es notable la nula importancia de Lugares de Oficinas (-0.42) y Lugares de Comercio (-0.40) en términos de densidad por km2
+, describiendo una economía de barrio que no depende de grandes cadenas, sino del comercio local. Finalmente, el perfil de seguridad destaca por una importancia alta en Delito_Otros_KM2 (1.00), sugiriendo que la alta densidad poblacional y la vida en la calle se traducen en una mayor frecuencia de incidentes generales, operando fuera de las dinámicas corporativas.
+
+Zonas asignadas:
+
+```{r}
+barrios_c2 <- resumen_clusters %>% 
+  filter(Cluster == 2) %>% 
+  pull(Zona)
+
+print(barrios_c2)
+```
+
+**Clúster 3: Alta Intensidad Comercial y Movilidad**
+
+Este Cluster 3 representa el nodo crítico de actividad comercial y conectividad masiva de la ciudad, centrado exclusivamente en el eje de Midtown y Times Square. Geográficamente, el grupo se limita a los sectores de mayor tránsito global, funcionando como el motor económico y turístico de Manhattan. A diferencia de los clusters residenciales, este grupo se caracteriza por una infraestructura diseñada para la población flotante, donde la importancia máxima de la movilidad y el comercio refleja un entorno de actividad ininterrumpida y una densidad de servicios sin precedentes.
+
+Desde la perspectiva del entorno físico y flujo, las variables Movilidad Promedio Diaria (3.00) y Cantidad de Estaciones (2.26) presentan valores extremos. Esto define técnicamente al cluster no como un barrio de residencia, sino como un “hub” de transporte y consumo. En contraste, el modelo asigna la importancia más baja a la Población por km2
+ (-1.71) y al Tamaño del Hogar (-1.25), confirmando que el uso del suelo está casi totalmente dedicado a fines no domésticos. Es un área de baja densidad residencial pero de altísima saturación funcional, donde el espacio se optimiza para el flujo de personas y mercancías.
+
+En cuanto a la actividad económica, el cluster muestra una relevancia masiva en Lugares de Comercio (2.24) y Competencia Indirecta (2.48). Técnicamente, esto lo posiciona como el mercado más competitivo y denso de la ciudad. Sin embargo, este dinamismo impacta directamente en el perfil de seguridad, registrando una importancia máxima en Delito de Propiedad (3.31) y Delito de Transporte (2.08). Estos valores no sugieren inseguridad residencial, sino la vulnerabilidad propia de zonas con millones de visitantes diarios. En resumen, el perfil técnico de este Cluster 3 es el de un ecosistema comercial e infraestructural extremo, operando como el pulmón funcional de la metrópoli.
+
+Zonas asignadas: 
+
+```{r}
+barrios_c3 <- resumen_clusters %>% 
+  filter(Cluster == 3) %>% 
+  pull(Zona)
+
+print(barrios_c3)
+```
+
+**Clúster 4: Residencia Premium y Densidad Consolidada**
+
+Este Clúster 4 representa el sector de mayor estabilidad residencial y madurez demográfica, ubicado primordialmente en el Upper East Side y Upper West Side, incluyendo sectores como Stuyvesant Town. Geográficamente, abarca los barrios de mayor tradición habitacional de la isla, flanqueando Central Park. A diferencia del Clúster 1 (con el que compartía grupo en K3), este se caracteriza por una estructura de densidad residencial máxima, donde la seguridad, el estatus y la calidad de vida de largo plazo son los factores predominantes de agrupación.
+
+Desde la perspectiva social, la Edad Mediana (0.96) presenta la importancia más alta de todo el modelo. Esto define técnicamente al clúster como un área de población senior y familias consolidadas que han alcanzado una etapa de estabilidad financiera. El Ingreso Mediano (0.61) y el Alquiler por Pie Cuadrado (0.42) son elevados, indicando un mercado inmobiliario de alta gama y capital acumulado. En cuanto al entorno físico, muestra una relevancia extrema en Población por $km^{2}$ (1.08) y Lugares Residenciales (0.45), clasificándolo como un territorio de uso de suelo eminentemente doméstico, alejado de la volatilidad comercial de otras zonas.
+
+Técnicamente, este clúster se distingue por su "aislamiento positivo" de las dinámicas de conflicto urbano. Las variables de Delincuencia (Propiedad: -0.35, Transporte: -0.71) y Movilidad de Estaciones (-0.42) registran valores negativos, lo que sugiere un entorno diseñado para la calma y la seguridad vecinal. A diferencia del Downtown, aquí la infraestructura no busca atraer flujos externos, sino proteger la privacidad y el bienestar de una base residente permanente. En resumen, el Clúster 4 es el bastión de la Manhattan residencial tradicional: densa, de alto valor adquisitivo y con una vocación familiar que opera bajo lógicas de preservación y baja rotación demográfica.
+
+Zonas asignadas:
+
+```{r}
+barrios_c4 <- resumen_clusters %>% 
+  filter(Cluster == 4) %>% 
+  pull(Zona)
+print(barrios_c4)
+```
+
+
+## Mapa Temático K=4
+
+```{r}
+url_geojson <- "https://data.cityofnewyork.us/resource/9nt8-h7nd.geojson"
+nyc_map <- st_read(url_geojson, quiet = TRUE)
+
+manhattan_map <- nyc_map %>% 
+  filter(boroname == "Manhattan")
+
+resumen_k4_mapa <- resumen_clusters %>% 
+  mutate(Zona = gsub("^Chinatown$", "Chinatown-Two Bridges", Zona))
+
+mapa_final <- manhattan_map %>%
+  left_join(resumen_k4_mapa, by = c("ntaname" = "Zona"))
+
+ggplot(data = mapa_final) +
+  geom_sf(aes(fill = as.factor(Cluster)), color = "white", size = 0.1) +
+  scale_fill_manual(
+    values = c("1" = "#440154FF", "2" = "#21908CFF", "3" = "#FDE725FF", "4" = "#5ec962FF"),
+    name = "Cluster",
+    na.value = "#D3D3D3",
+    labels = c("C1", "C2", "C3", "C4", "Sin Datos")
+    )+
+  labs(
+    title = "Distribucion Espacial de Clusteres en Manhattan",
+    subtitle = "Zonas coloreadas segun perfil socio-urbano (K=4)",
+    caption = "Nota: Central Park y zonas costeras aparecen en gris por ausencia de datos residenciales."
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5, margin = margin(b = 10)),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "darkslategrey", margin = margin(b = 20)),
+    plot.caption = element_text(size = 9, hjust = 0.5, face = "italic", color = "grey30", margin = margin(t = 15)),
+    legend.position = "right",
+    legend.title = element_text(face = "bold")
+  )
+```
+
+```{r}
+mapa_final_interactivo <- mapa_final %>%
+  mutate(texto_hover = paste0("<b>Zona:</b> ", ntaname, 
+                              "<br><b>Cluster:</b> ", ifelse(is.na(Cluster), "Sin Datos", Cluster)))
+
+mapa_plotly <- ggplot(data = mapa_final_interactivo) +
+  geom_sf(aes(fill = as.factor(Cluster), text = texto_hover), color = "white", size = 0.1) +
+    scale_fill_manual(
+    values = c("1" = "#440154FF", "2" = "#21908CFF", "3" = "#FDE725FF", "4" = "#5ec962FF"),
+    name = "Cluster",
+    na.value = "#D3D3D3",
+    labels = c("C1", "C2", "C3", "C4", "Sin Datos")
+    ) +
+  theme_void() +
+  labs(title = "Mapa Interactivo de Clusteres de Manhattan")
+
+ggplotly(mapa_plotly, tooltip = "text") %>%
+  layout(title = list(text = paste0('Distribucion Espacial de Clusteres en Manhattan K=4')))
+```
+
+# Descarga de Dataset con Clusters Asignados K4
+
+```{r}
+dataset_final_k4 <- manhattanz %>%
+  mutate(Cluster = as.factor(ward_dendro))
+write_xlsx(dataset_final_k4, ruta_output)
+```
+
+
