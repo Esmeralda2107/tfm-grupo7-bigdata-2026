@@ -249,6 +249,20 @@ CLUSTER_LABELS = {
     4: "4",
 }
 
+CLUSTER_NAMES = {
+    1: "Ejes laborales y comerciales",
+    2: "Entornos residenciales con afinidad",
+    3: "Centros de movilidad y saturación",
+    4: "Enclaves residenciales de renta premium",
+}
+
+CLUSTER_INTERPRETATIONS = {
+    1: "Zonas con presencia relevante de oficinas y actividad comercial, flujo diurno constante y niveles operativos intermedios.",
+    2: "Áreas de carácter más residencial, con mayor afinidad demográfica para la propuesta del negocio y condiciones operativas relativamente controladas.",
+    3: "Núcleos de movilidad muy intensa y presión competitiva elevada, especialmente visibles en áreas centrales de alto tránsito.",
+    4: "Sectores residenciales de mayor valor relativo, seguridad alta y niveles de renta comercial premium.",
+}
+
 
 # =========================================================
 # FUNCIONES AUXILIARES
@@ -467,44 +481,7 @@ def compute_scenario_scores(df, scenario_weights):
 
 
 def build_cluster_names(df):
-    dim_cols = {
-        "SCORE_DIM_DEMANDA": "demanda",
-        "SCORE_DIM_MOVILIDAD": "movilidad",
-        "SCORE_DIM_SEGURIDAD": "seguridad",
-        "SCORE_DIM_PUNTOS_INTERES": "puntos de interés",
-        "SCORE_DIM_COMPETENCIA": "competencia",
-        "SCORE_DIM_COSTE": "coste",
-    }
-    cluster_names = {}
-
-    for cluster_id in sorted(df["CLUSTER_K4"].dropna().unique().tolist()):
-        sub = df[df["CLUSTER_K4"] == cluster_id]
-        cluster_means = sub[list(dim_cols.keys())].mean().sort_values(ascending=False)
-
-        top_col = cluster_means.index[0]
-        top_val = cluster_means.iloc[0]
-        second_col = cluster_means.index[1]
-        second_val = cluster_means.iloc[1]
-
-        top_label = dim_cols[top_col]
-        second_label = dim_cols[second_col]
-
-        spread = cluster_means.max() - cluster_means.min()
-
-        if top_val >= 85 and second_val < 60:
-            cluster_names[cluster_id] = f"{top_label} muy alta"
-        elif top_val >= 70 and second_val >= 65:
-            cluster_names[cluster_id] = f"{top_label} y {second_label} altas"
-        elif top_val >= 70:
-            cluster_names[cluster_id] = f"{top_label} alta"
-        elif top_val >= 60 and spread <= 20:
-            cluster_names[cluster_id] = "perfil equilibrado"
-        elif top_val >= 60:
-            cluster_names[cluster_id] = f"{top_label} relativamente alta"
-        else:
-            cluster_names[cluster_id] = "perfil intermedio"
-
-    return cluster_names
+    return CLUSTER_NAMES.copy()
 
 
 def get_top_subdimensions(row, top_n=3):
@@ -1460,7 +1437,9 @@ En dimensiones de sentido inverso, una puntuación alta indica una condición re
     )
 
     for _, row in cluster_list_df.iterrows():
+        cluster_id = int(row["CLUSTER_K4"])
         with st.expander(f"{row['CLUSTER_FILTER']} — {row['CLUSTER_DESC']} | {len(row['NOMBRE_ZONA'])} zonas"):
+            st.markdown(f"**Interpretación:** {CLUSTER_INTERPRETATIONS.get(cluster_id, '')}")
             st.write(", ".join(row["NOMBRE_ZONA"]))
 
     st.markdown("### Lectura del gráfico de clusters")
