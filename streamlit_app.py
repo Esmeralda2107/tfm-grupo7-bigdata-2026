@@ -274,6 +274,10 @@ def render_chips(items):
     st.markdown(html, unsafe_allow_html=True)
 
 
+def format_weights_text(weights_dict):
+    return " · ".join([f"{DIMENSIONS[k]['label']}: {v}%" for k, v in weights_dict.items()])
+
+
 def clean_zone_id(value):
     if pd.isna(value):
         return None
