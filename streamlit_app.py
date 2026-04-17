@@ -28,6 +28,7 @@ CSV_PATH = BASE_DIR / "datos" / "maestro" / "MASTER_DATASET_MANHATTAN_ML.csv"
 CLUSTER_PATH = BASE_DIR / "resultados" / "04_clustering" / "Ward.D" / "manhattan_Ward_k4.xlsx"
 MICRO_PATH = BASE_DIR / "resultados" / "05_scoring" / "scoring_micro.csv"
 MACRO_PATH = BASE_DIR / "resultados" / "05_scoring" / "scoring_macro.csv"
+CONSOLIDADO_PATH = BASE_DIR / "resultados" / "06_escenarios" / "consolidado_escenarios.csv"
 GEOJSON_DIR = BASE_DIR / "datos" / "crudos" / "zonas"
 
 
@@ -242,10 +243,10 @@ CLUSTER_DESCRIPTORS = {
 }
 
 CLUSTER_LABELS = {
-    1: "Cluster A",
-    2: "Cluster B",
-    3: "Cluster C",
-    4: "Cluster D",
+    1: "1",
+    2: "2",
+    3: "3",
+    4: "4",
 }
 
 
@@ -360,7 +361,7 @@ def extract_geojson_ids(geojson_dict, geo_field):
 
 @st.cache_data
 def load_data():
-    required_files = [CSV_PATH, CLUSTER_PATH, MICRO_PATH, MACRO_PATH]
+    required_files = [CSV_PATH, CLUSTER_PATH, MICRO_PATH, MACRO_PATH, CONSOLIDADO_PATH]
     missing = [str(p) for p in required_files if not p.exists()]
     if missing:
         raise FileNotFoundError("Faltan archivos necesarios para la aplicación:\n" + "\n".join(missing))
@@ -373,14 +374,15 @@ def load_data():
     df_cluster = pd.read_excel(CLUSTER_PATH)
     df_micro = pd.read_csv(MICRO_PATH)
     df_macro = pd.read_csv(MACRO_PATH)
+    df_consolidado = pd.read_csv(CONSOLIDADO_PATH)
 
     with open(geojson_files[0], "r", encoding="utf-8") as f:
         geojson = json.load(f)
 
-    return df_raw, df_cluster, df_micro, df_macro, geojson
+    return df_raw, df_cluster, df_micro, df_macro, df_consolidado, geojson
 
 
-def prepare_model_dataframe(df_raw, df_cluster, df_micro, df_macro):
+def prepare_model_dataframe(df_raw, df_cluster, df_micro, df_macro, df_consolidado):
     out = df_raw.copy()
     out["ID_ZONA"] = out["ID_ZONA"].apply(clean_zone_id)
     out["NOMBRE_ZONA"] = out["NOMBRE_ZONA"].astype(str).str.strip()
@@ -408,7 +410,12 @@ def prepare_model_dataframe(df_raw, df_cluster, df_micro, df_macro):
 
     out = out.merge(cluster, on="ID_ZONA", how="left")
     out = out.merge(micro, on="ID_ZONA", how="left")
+    consolidado = df_consolidado.copy()
+    consolidado["ID_ZONA"] = consolidado["ID_ZONA"].apply(clean_zone_id)
+    consolidado = consolidado.drop(columns=["NOMBRE_ZONA", "CLUSTER"], errors="ignore")
+
     out = out.merge(macro, on="ID_ZONA", how="left")
+    out = out.merge(consolidado, on="ID_ZONA", how="left")
 
     out["CLUSTER_K4"] = pd.to_numeric(out["CLUSTER_K4"], errors="coerce").astype("Int64")
 
@@ -424,7 +431,7 @@ def prepare_model_dataframe(df_raw, df_cluster, df_micro, df_macro):
 
 
 def validate_columns(df):
-    required = ["ID_ZONA", "NOMBRE_ZONA", "CLUSTER_K4"]
+    required = ["ID_ZONA", "NOMBRE_ZONA", "CLUSTER_K4", "RANKING_GLOBAL", "VARIABILIDAD_ENTRE_ESCENARIOS", "CONSISTENCIA_ESCENARIOS"]
     for dim_key, dim_meta in DIMENSIONS.items():
         required.append(f"SCORE_DIM_{dim_key}")
         for var in dim_meta["variables"].keys():
@@ -456,30 +463,29 @@ def compute_scenario_scores(df, scenario_weights):
 
 
 def build_cluster_names(df):
-    score_cols = [f"SCORE_VAR_{v}" for dim in DIMENSIONS.values() for v in dim["variables"].keys()]
+    dim_cols = {
+        "SCORE_DIM_DEMANDA": "demanda",
+        "SCORE_DIM_MOVILIDAD": "movilidad",
+        "SCORE_DIM_SEGURIDAD": "seguridad",
+        "SCORE_DIM_PUNTOS_INTERES": "puntos de interés",
+        "SCORE_DIM_COMPETENCIA": "competencia",
+        "SCORE_DIM_COSTE": "coste",
+    }
+    overall_means = df[list(dim_cols.keys())].mean()
     cluster_names = {}
-
-    overall_means = df[score_cols].mean()
 
     for cluster_id in sorted(df["CLUSTER_K4"].dropna().unique().tolist()):
         sub = df[df["CLUSTER_K4"] == cluster_id]
-        cluster_means = sub[score_cols].mean()
+        cluster_means = sub[list(dim_cols.keys())].mean()
         lift = (cluster_means - overall_means).sort_values(ascending=False)
 
-        top_vars = []
-        for col in lift.index:
-            raw_var = col.replace("SCORE_VAR_", "")
-            if raw_var in CLUSTER_DESCRIPTORS:
-                top_vars.append(CLUSTER_DESCRIPTORS[raw_var])
-            if len(top_vars) == 2:
-                break
-
-        if len(top_vars) == 0:
+        top_dims = [dim_cols[col] for col in lift.index[:2]]
+        if len(top_dims) == 0:
             cluster_names[cluster_id] = "sin rasgo dominante claro"
-        elif len(top_vars) == 1:
-            cluster_names[cluster_id] = top_vars[0]
+        elif len(top_dims) == 1:
+            cluster_names[cluster_id] = f"predominio relativo de {top_dims[0]}"
         else:
-            cluster_names[cluster_id] = f"{top_vars[0]} y {top_vars[1]}"
+            cluster_names[cluster_id] = f"predominio relativo de {top_dims[0]} y {top_dims[1]}"
 
     return cluster_names
 
@@ -525,21 +531,27 @@ def render_html_table_multiindex(df):
 
 def build_grouped_context(df, scenario_name):
     out = df[[
-        "RANK", "ID_ZONA", "NOMBRE_ZONA", "CLUSTER_FILTER", "CLUSTER_DESC", "SCORE_ESCENARIO"
+        "RANK", "RANKING_GLOBAL", "ID_ZONA", "NOMBRE_ZONA", "CLUSTER_FILTER",
+        "CLUSTER_DESC", "SCORE_ESCENARIO", "VARIABILIDAD_ENTRE_ESCENARIOS", "CONSISTENCIA_ESCENARIOS"
     ]].head(10).copy()
     out["ESCENARIO"] = scenario_name
     out = out.rename(columns={
-        "RANK": "Rank",
+        "RANK": "Rank escenario",
+        "RANKING_GLOBAL": "Ranking global",
         "ID_ZONA": "ID zona",
         "NOMBRE_ZONA": "Zona",
         "CLUSTER_FILTER": "Cluster",
-        "CLUSTER_DESC": "Nombre del cluster",
+        "CLUSTER_DESC": "Descripción del cluster",
         "SCORE_ESCENARIO": "Score escenario",
+        "VARIABILIDAD_ENTRE_ESCENARIOS": "Variabilidad",
+        "CONSISTENCIA_ESCENARIOS": "Consistencia",
         "ESCENARIO": "Escenario",
     })
 
-    out["Rank"] = out["Rank"].apply(fmt_int)
+    out["Rank escenario"] = out["Rank escenario"].apply(fmt_int)
+    out["Ranking global"] = out["Ranking global"].apply(fmt_int)
     out["Score escenario"] = out["Score escenario"].apply(lambda x: fmt_num(x, 2))
+    out["Variabilidad"] = out["Variabilidad"].apply(lambda x: fmt_num(x, 2))
     return out
 
 
@@ -800,8 +812,8 @@ st.title("TFM GRUPO 7 SITE SELECTION MANHATTAN")
 st.caption("Aplicación interactiva para scoring multicriterio, escenarios de decisión y análisis territorial.")
 
 try:
-    df_raw, df_cluster, df_micro, df_macro, geojson = load_data()
-    df = prepare_model_dataframe(df_raw, df_cluster, df_micro, df_macro)
+    df_raw, df_cluster, df_micro, df_macro, df_consolidado, geojson = load_data()
+    df = prepare_model_dataframe(df_raw, df_cluster, df_micro, df_macro, df_consolidado)
 except Exception as e:
     st.error(str(e))
     st.stop()
@@ -864,17 +876,12 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
+st.sidebar.markdown("**Pesos por defecto del escenario**")
+st.sidebar.markdown(default_weights_text)
 st.sidebar.markdown(
-    f"""
-    <div class="summary-box" style="padding: 12px 14px; margin-top: 0;">
-        <strong>Pesos por defecto del escenario</strong><br>
-        {default_weights_text}<br><br>
-        <strong>Nota de interacción:</strong> las dimensiones principales concentran el 60% del peso total
-        y las dimensiones de contexto el 40%. Puedes modificar los pesos dentro de cada bloque, y la aplicación
-        reajusta automáticamente las demás dimensiones para conservar esta lógica.
-    </div>
-    """,
-    unsafe_allow_html=True,
+    "**Nota de interacción:** las dimensiones principales concentran el 60% del peso total y las "
+    "dimensiones de contexto el 40%. Puedes modificar los pesos dentro de cada bloque, y la aplicación "
+    "reajusta automáticamente las demás dimensiones para conservar esta lógica."
 )
 
 st.sidebar.markdown("### Ajuste de pesos")
@@ -1070,11 +1077,13 @@ chips = [
 ]
 render_chips(chips)
 
+st.markdown(f"**Pesos efectivos aplicados:** {format_weights_text(effective_weights)}")
+
 
 # =========================================================
 # KPIS
 # =========================================================
-c1, c2, c3, c4 = st.columns([2.2, 1.1, 1.1, 1.9])
+c1, c2, c3, c4, c5 = st.columns([2.0, 1.05, 1.05, 1.7, 1.35])
 
 with c1:
     metric_card(
@@ -1102,6 +1111,13 @@ with c4:
         "Subdimensiones dominantes",
         top_subdim_text,
         "Top 3 variables con mayor aporte",
+    )
+
+with c5:
+    metric_card(
+        "Ranking global y consistencia",
+        f"{fmt_int(best_zone['RANKING_GLOBAL'])} · {best_zone['CONSISTENCIA_ESCENARIOS']}",
+        f"Variabilidad: {fmt_num(best_zone['VARIABILIDAD_ENTRE_ESCENARIOS'], 2)}",
     )
 
 
@@ -1368,6 +1384,14 @@ with tab4:
 - Dimensiones de contexto: **40 %**
 - La app permite modificar varias dimensiones de forma acumulativa dentro de cada bloque y reajusta automáticamente las demás para conservar esa lógica.
 
+**Consistencia entre escenarios**
+- La aplicación incorpora el **ranking global**, la **variabilidad entre escenarios** y la **clasificación de consistencia** ya calculados en el repositorio.
+- La **variabilidad entre escenarios** corresponde a la desviación estándar de los rankings obtenidos por cada zona en los tres escenarios.
+- Para fines interpretativos:
+  - **0 a 3**: alta consistencia
+  - **más de 3 y hasta 6**: consistencia media
+  - **más de 6**: baja consistencia
+
 **Interpretación de categorías**
 - **Muy alta**: 85 a 100
 - **Alta**: 70 a 84.99
@@ -1389,6 +1413,9 @@ En dimensiones de sentido inverso, una puntuación alta indica una condición re
 - Puntos de interés
 - Competencia
 - Coste
+
+**Fuente del clustering mostrada en la app**
+- La aplicación utiliza la solución de clusterización final seleccionada en el repositorio: **Ward.D con k = 4**.
 """
     )
 
@@ -1479,6 +1506,7 @@ with tab5:
 - El modelo simplifica la realidad y se basa en variables proxy según la disponibilidad de datos.
 - Los resultados son relativos al conjunto de zonas analizadas, por lo que un score alto no implica una condición óptima absoluta.
 - La recomendación depende de los pesos asignados en cada escenario, por lo que el ranking puede variar.
+- La segmentación territorial utilizada en la aplicación corresponde específicamente a la solución **Ward.D con k = 4** seleccionada en el proyecto.
 - El modelo depende de la calidad, actualización y homogeneidad de las fuentes utilizadas.
 - No incorpora factores cualitativos y operativos clave, por lo que no sustituye la validación en campo.
 - La recomendación obtenida no garantiza el éxito comercial del negocio.
