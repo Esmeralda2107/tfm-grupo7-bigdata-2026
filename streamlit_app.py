@@ -1,10 +1,9 @@
+
 from pathlib import Path
 import json
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
 
 
 # =========================================================
@@ -16,9 +15,20 @@ st.set_page_config(
     layout="wide",
 )
 
-BASE_DIR = Path(__file__).resolve().parent
-CSV_PATH = BASE_DIR / "datos" / "maestro" / "MASTER_DATASET_MANHATTAN_ML.csv"
-GEOJSON_DIR = BASE_DIR / "datos" / "crudos" / "zonas"
+def find_repo_root(start_path: Path) -> Path:
+    for candidate in [start_path, *start_path.parents]:
+        if (candidate / "datos").exists() and (candidate / "resultados").exists():
+            return candidate
+    return start_path
+
+APP_DIR = Path(__file__).resolve().parent
+REPO_ROOT = find_repo_root(APP_DIR)
+
+WARD_PATH = REPO_ROOT / "resultados" / "04_clustering" / "Ward.D" / "manhattan_Ward_k4.xlsx"
+MICRO_PATH = REPO_ROOT / "resultados" / "05_scoring" / "scoring_micro.csv"
+MACRO_PATH = REPO_ROOT / "resultados" / "05_scoring" / "scoring_macro.csv"
+CONSOLIDADO_PATH = REPO_ROOT / "resultados" / "06_escenarios" / "consolidado_escenarios.csv"
+GEOJSON_DIR = REPO_ROOT / "datos" / "crudos" / "zonas"
 
 
 # =========================================================
@@ -58,6 +68,13 @@ st.markdown(
         padding: 12px 14px;
         border-radius: 10px;
         margin-bottom: 10px;
+    }
+    .note-box {
+        background-color: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
     }
     .summary-box {
         background-color: #f8fafc;
@@ -125,47 +142,47 @@ DIMENSIONS = {
     "DEMANDA": {
         "label": "Censo (Demanda)",
         "variables": {
-            "POBLACION_KM2": {"label": "Población por km²", "weight": 30, "sense": "direct"},
-            "PORCENTAJE_HISPANOS": {"label": "Porcentaje hispanos", "weight": 15, "sense": "direct"},
-            "EDAD_MEDIANA": {"label": "Edad mediana", "weight": 15, "sense": "direct"},
-            "INGRESO_MEDIANO_HOGAR": {"label": "Ingreso mediano del hogar", "weight": 25, "sense": "direct"},
-            "TAMANO_HOGAR_PROMEDIO": {"label": "Tamaño hogar promedio", "weight": 15, "sense": "direct"},
+            "POBLACION_KM2": {"label": "Población por km²", "weight": 30},
+            "PORCENTAJE_HISPANOS": {"label": "Porcentaje hispanos", "weight": 20},
+            "EDAD_MEDIANA": {"label": "Edad mediana", "weight": 10},
+            "INGRESO_MEDIANO_HOGAR": {"label": "Ingreso mediano del hogar", "weight": 25},
+            "TAMANO_HOGAR_PROMEDIO": {"label": "Tamaño hogar promedio", "weight": 15},
         },
     },
     "MOVILIDAD": {
         "label": "Movilidad",
         "variables": {
-            "MOVILIDAD_PROMEDIO_DIARIA": {"label": "Movilidad promedio diaria", "weight": 80, "sense": "direct"},
-            "MOV_CANTIDAD_ESTACIONES": {"label": "Cantidad de estaciones", "weight": 20, "sense": "direct"},
+            "MOVILIDAD_PROMEDIO_DIARIA": {"label": "Movilidad promedio diaria", "weight": 80},
+            "MOV_CANTIDAD_ESTACIONES": {"label": "Cantidad de estaciones", "weight": 20},
         },
     },
     "SEGURIDAD": {
         "label": "Seguridad",
         "variables": {
-            "DELITO_PROPIEDAD_KM2": {"label": "Delito propiedad por km²", "weight": 45, "sense": "inverse"},
-            "DELITO_TRANSPORTE_KM2": {"label": "Delito transporte por km²", "weight": 35, "sense": "inverse"},
-            "DELITO_OTROS_KM2": {"label": "Otros delitos por km²", "weight": 20, "sense": "inverse"},
+            "DELITO_PROPIEDAD_KM2": {"label": "Delito propiedad por km²", "weight": 45},
+            "DELITO_TRANSPORTE_KM2": {"label": "Delito transporte por km²", "weight": 35},
+            "DELITO_OTROS_KM2": {"label": "Otros delitos por km²", "weight": 20},
         },
     },
-    "PUNTOS_INTERES": {
+    "PTOS_INTERES": {
         "label": "Puntos de interés",
         "variables": {
-            "LUGARES_COMERCIO_KM2": {"label": "Lugares comercio por km²", "weight": 35, "sense": "direct"},
-            "LUGARES_OFICINAS_KM2": {"label": "Lugares oficinas por km²", "weight": 45, "sense": "direct"},
-            "LUGARES_RESIDENCIAL_KM2": {"label": "Lugares residencial por km²", "weight": 20, "sense": "direct"},
+            "LUGARES_COMERCIO_KM2": {"label": "Lugares comercio por km²", "weight": 35},
+            "LUGARES_OFICINAS_KM2": {"label": "Lugares oficinas por km²", "weight": 45},
+            "LUGARES_RESIDENCIAL_KM2": {"label": "Lugares residencial por km²", "weight": 20},
         },
     },
     "COMPETENCIA": {
         "label": "Competencia",
         "variables": {
-            "COMPETENCIA_DIRECTA_KM2": {"label": "Competencia directa por km²", "weight": 90, "sense": "inverse"},
-            "COMPETENCIA_INDIRECTA_KM2": {"label": "Competencia indirecta por km²", "weight": 10, "sense": "direct"},
+            "COMPETENCIA_DIRECTA_KM2": {"label": "Competencia directa por km²", "weight": 90},
+            "COMPETENCIA_INDIRECTA_KM2": {"label": "Competencia indirecta por km²", "weight": 10},
         },
     },
     "COSTE": {
         "label": "Coste",
         "variables": {
-            "ALQ_PRECIO_PIE2_ANUAL": {"label": "Precio alquiler pie² anual", "weight": 100, "sense": "inverse"},
+            "ALQ_PRECIO_PIE2_ANUAL": {"label": "Precio alquiler pie² anual", "weight": 100},
         },
     },
 }
@@ -175,26 +192,26 @@ SCENARIOS = {
         "description": "Prioriza las dimensiones más vinculadas con la capacidad de atracción comercial de la zona.",
         "weights": {
             "DEMANDA": 35,
-            "PUNTOS_INTERES": 25,
+            "PTOS_INTERES": 25,
             "MOVILIDAD": 15,
             "SEGURIDAD": 10,
             "COSTE": 10,
             "COMPETENCIA": 5,
         },
-        "main_dims": ["DEMANDA", "PUNTOS_INTERES"],
+        "main_dims": ["DEMANDA", "PTOS_INTERES"],
         "context_dims": ["MOVILIDAD", "SEGURIDAD", "COSTE", "COMPETENCIA"],
     },
     "Eficiencia y flujo": {
         "description": "Da mayor peso a las condiciones urbanas más relevantes para un modelo fast casual orientado al take-away.",
         "weights": {
             "MOVILIDAD": 35,
-            "PUNTOS_INTERES": 25,
+            "PTOS_INTERES": 25,
             "DEMANDA": 15,
             "SEGURIDAD": 10,
             "COSTE": 10,
             "COMPETENCIA": 5,
         },
-        "main_dims": ["MOVILIDAD", "PUNTOS_INTERES"],
+        "main_dims": ["MOVILIDAD", "PTOS_INTERES"],
         "context_dims": ["DEMANDA", "SEGURIDAD", "COSTE", "COMPETENCIA"],
     },
     "Viabilidad y riesgo": {
@@ -205,37 +222,27 @@ SCENARIOS = {
             "COMPETENCIA": 15,
             "DEMANDA": 15,
             "MOVILIDAD": 10,
-            "PUNTOS_INTERES": 15,
+            "PTOS_INTERES": 15,
         },
         "main_dims": ["SEGURIDAD", "COSTE", "COMPETENCIA"],
-        "context_dims": ["DEMANDA", "MOVILIDAD", "PUNTOS_INTERES"],
+        "context_dims": ["DEMANDA", "MOVILIDAD", "PTOS_INTERES"],
     },
 }
 
-CLUSTER_DESCRIPTORS = {
-    "POBLACION_KM2": "alta densidad poblacional",
-    "PORCENTAJE_HISPANOS": "alta población hispana",
-    "EDAD_MEDIANA": "edad media madura",
-    "INGRESO_MEDIANO_HOGAR": "alto ingreso",
-    "TAMANO_HOGAR_PROMEDIO": "hogares más grandes",
-    "MOVILIDAD_PROMEDIO_DIARIA": "alta movilidad",
-    "MOV_CANTIDAD_ESTACIONES": "alta conectividad",
-    "DELITO_PROPIEDAD_KM2": "menor delito patrimonial",
-    "DELITO_TRANSPORTE_KM2": "menor delito en transporte",
-    "DELITO_OTROS_KM2": "menor delincuencia general",
-    "LUGARES_COMERCIO_KM2": "actividad comercial",
-    "LUGARES_OFICINAS_KM2": "concentración de oficinas",
-    "LUGARES_RESIDENCIAL_KM2": "entorno residencial",
-    "COMPETENCIA_DIRECTA_KM2": "baja competencia directa",
-    "COMPETENCIA_INDIRECTA_KM2": "alta competencia indirecta",
-    "ALQ_PRECIO_PIE2_ANUAL": "coste de alquiler contenido",
+CLUSTER_LABELS = {
+    1: "Cluster 1",
+    2: "Cluster 2",
+    3: "Cluster 3",
+    4: "Cluster 4",
 }
 
-CLUSTER_LABELS = {
-    1: "Cluster A",
-    2: "Cluster B",
-    3: "Cluster C",
-    4: "Cluster D",
+CLUSTER_DIM_DESCRIPTORS = {
+    "DEMANDA": "demanda",
+    "MOVILIDAD": "movilidad",
+    "SEGURIDAD": "seguridad",
+    "PTOS_INTERES": "puntos de interés",
+    "COMPETENCIA": "competencia",
+    "COSTE": "coste",
 }
 
 
@@ -269,24 +276,16 @@ def clean_zone_id(value):
     return str(value).strip().upper()
 
 
-def score_0_100_percentile(series: pd.Series, sense: str = "direct") -> pd.Series:
-    s = pd.to_numeric(series, errors="coerce")
-    s = s.fillna(s.median())
+def fmt_num(x, decimals=2):
+    if pd.isna(x):
+        return ""
+    return f"{x:,.{decimals}f}"
 
-    p5 = s.quantile(0.05)
-    p95 = s.quantile(0.95)
 
-    if pd.isna(p5) or pd.isna(p95) or p95 == p5:
-        return pd.Series(50.0, index=s.index)
-
-    s_clipped = s.clip(lower=p5, upper=p95)
-
-    if sense == "direct":
-        out = ((s_clipped - p5) / (p95 - p5)) * 100
-    else:
-        out = ((p95 - s_clipped) / (p95 - p5)) * 100
-
-    return out.clip(0, 100).round(2)
+def fmt_int(x):
+    if pd.isna(x):
+        return ""
+    return f"{int(x):,}"
 
 
 def classify_level(score):
@@ -329,14 +328,11 @@ def detect_geojson_id_field(geojson_dict):
     features = geojson_dict.get("features", [])
     if not features:
         return None
-
     props = features[0].get("properties", {})
     candidates = ["NTA2020", "nta2020", "NTACode", "NTA_CODE", "nta_code", "NTA", "nta", "id", "ID"]
-
     for cand in candidates:
         if cand in props:
             return cand
-
     return list(props.keys())[0] if props else None
 
 
@@ -350,48 +346,97 @@ def extract_geojson_ids(geojson_dict, geo_field):
 
 @st.cache_data
 def load_data():
-    if not CSV_PATH.exists():
-        raise FileNotFoundError(f"No existe el CSV maestro en: {CSV_PATH}")
+    required_paths = [WARD_PATH, MICRO_PATH, MACRO_PATH, CONSOLIDADO_PATH]
+    missing_files = [p for p in required_paths if not p.exists()]
+    if missing_files:
+        raise FileNotFoundError(
+            "Faltan archivos necesarios para la app:\n" + "\n".join(str(p) for p in missing_files)
+        )
 
     geojson_files = sorted(GEOJSON_DIR.glob("*.geojson"))
     if not geojson_files:
         raise FileNotFoundError(f"No se encontró ningún .geojson dentro de: {GEOJSON_DIR}")
 
-    df = pd.read_csv(CSV_PATH)
+    raw_df = pd.read_excel(WARD_PATH)
+    micro_df = pd.read_csv(MICRO_PATH)
+    macro_df = pd.read_csv(MACRO_PATH)
+    consolidado_df = pd.read_csv(CONSOLIDADO_PATH)
 
     with open(geojson_files[0], "r", encoding="utf-8") as f:
         geojson = json.load(f)
 
-    return df, geojson
+    return raw_df, micro_df, macro_df, consolidado_df, geojson
 
 
 def validate_columns(df):
-    required = ["ID_ZONA", "NOMBRE_ZONA"]
+    required = [
+        "ID_ZONA", "NOMBRE_ZONA", "CLUSTER",
+        "DEMANDA", "MOVILIDAD", "SEGURIDAD", "PTOS_INTERES", "COMPETENCIA", "COSTE",
+        "SCORE_MEDIO", "RANKING_GLOBAL", "VARIABILIDAD_ENTRE_ESCENARIOS", "CONSISTENCIA_ESCENARIOS",
+    ]
     for dim_meta in DIMENSIONS.values():
         required.extend(list(dim_meta["variables"].keys()))
-    return [c for c in required if c not in df.columns]
+        required.extend([f"SCORE_{v}" for v in dim_meta["variables"].keys()])
+    missing = [c for c in required if c not in df.columns]
+    return missing
 
 
-def compute_dimension_scores(df):
-    out = df.copy()
+def build_cluster_descriptions(df):
+    macro_cols = ["DEMANDA", "MOVILIDAD", "SEGURIDAD", "PTOS_INTERES", "COMPETENCIA", "COSTE"]
+    overall = df[macro_cols].mean()
+    cluster_names = {}
 
+    for cluster_id in sorted(df["CLUSTER"].dropna().unique()):
+        sub = df[df["CLUSTER"] == cluster_id]
+        diff = (sub[macro_cols].mean() - overall).sort_values(ascending=False)
+        top_dims = [CLUSTER_DIM_DESCRIPTORS[idx] for idx in diff.index[:2]]
+        if len(top_dims) >= 2:
+            cluster_names[cluster_id] = f"Predominio de {top_dims[0]} y {top_dims[1]}"
+        elif len(top_dims) == 1:
+            cluster_names[cluster_id] = f"Predominio de {top_dims[0]}"
+        else:
+            cluster_names[cluster_id] = "Perfil territorial general"
+    return cluster_names
+
+
+def prepare_dataframe(raw_df, micro_df, macro_df, consolidado_df):
+    raw = raw_df.copy()
+    if "Cluster" in raw.columns:
+        raw = raw.rename(columns={"Cluster": "CLUSTER"})
+
+    raw["ID_ZONA"] = raw["ID_ZONA"].apply(clean_zone_id)
+    raw["NOMBRE_ZONA"] = raw["NOMBRE_ZONA"].astype(str).str.strip()
+
+    micro = micro_df.copy()
+    micro["ID_ZONA"] = micro["ID_ZONA"].apply(clean_zone_id)
+    micro = micro.drop(columns=["NOMBRE_ZONA", "CLUSTER"], errors="ignore")
+
+    macro = macro_df.copy()
+    macro["ID_ZONA"] = macro["ID_ZONA"].apply(clean_zone_id)
+    macro = macro.drop(columns=["NOMBRE_ZONA", "CLUSTER"], errors="ignore")
+
+    cons = consolidado_df.copy()
+    cons["ID_ZONA"] = cons["ID_ZONA"].apply(clean_zone_id)
+    cons = cons.drop(columns=["NOMBRE_ZONA", "CLUSTER"], errors="ignore")
+
+    df = raw.merge(micro, on="ID_ZONA", how="left")
+    df = df.merge(macro, on="ID_ZONA", how="left")
+    df = df.merge(cons, on="ID_ZONA", how="left")
+
+    df["CLUSTER"] = pd.to_numeric(df["CLUSTER"], errors="coerce").astype("Int64")
+    df["CLUSTER_FILTER"] = df["CLUSTER"].map(CLUSTER_LABELS)
+
+    cluster_desc = build_cluster_descriptions(df)
+    df["CLUSTER_DESC"] = df["CLUSTER"].map(cluster_desc)
+
+    # Reconstrucción de score 0-100 de cada subvariable a partir del scoring micro ya ponderado
     for dim_key, dim_meta in DIMENSIONS.items():
-        contrib_cols = []
-
         for var, var_meta in dim_meta["variables"].items():
-            out[var] = pd.to_numeric(out[var], errors="coerce")
-            out[var] = out[var].fillna(out[var].median())
+            micro_col = f"SCORE_{var}"
+            factor = var_meta["weight"] / 100
+            df[f"SCORE0_{var}"] = (df[micro_col] / factor).clip(0, 100).round(2)
 
-            score_col = f"SCORE_VAR_{var}"
-            contrib_col = f"CONTRIB_DIMVAR_{var}"
-
-            out[score_col] = score_0_100_percentile(out[var], var_meta["sense"])
-            out[contrib_col] = out[score_col] * (var_meta["weight"] / 100)
-            contrib_cols.append(contrib_col)
-
-        out[f"SCORE_DIM_{dim_key}"] = out[contrib_cols].sum(axis=1).round(2)
-
-    return out
+    return df
 
 
 def compute_scenario_scores(df, scenario_weights):
@@ -399,67 +444,20 @@ def compute_scenario_scores(df, scenario_weights):
     dim_contrib_cols = []
 
     for dim_key, dim_weight in scenario_weights.items():
-        dim_score_col = f"SCORE_DIM_{dim_key}"
+        dim_score_col = dim_key
         dim_contrib_col = f"CONTRIB_SCEN_DIM_{dim_key}"
 
         out[dim_contrib_col] = out[dim_score_col] * (dim_weight / 100)
         dim_contrib_cols.append(dim_contrib_col)
 
-        for var, var_meta in DIMENSIONS[dim_key]["variables"].items():
-            var_score_col = f"SCORE_VAR_{var}"
+        for var in DIMENSIONS[dim_key]["variables"].keys():
+            micro_score_col = f"SCORE_{var}"
             var_contrib_col = f"CONTRIB_SCEN_VAR_{var}"
-            out[var_contrib_col] = (
-                out[var_score_col] * (var_meta["weight"] / 100) * (dim_weight / 100)
-            ).round(4)
+            out[var_contrib_col] = (out[micro_score_col] * (dim_weight / 100)).round(4)
 
     out["SCORE_ESCENARIO"] = out[dim_contrib_cols].sum(axis=1).round(2)
     out["RANK"] = out["SCORE_ESCENARIO"].rank(ascending=False, method="dense").astype(int)
-    return out.sort_values("SCORE_ESCENARIO", ascending=False)
-
-
-@st.cache_data
-def compute_clusters(df, feature_cols):
-    x = df[feature_cols].copy()
-    for col in feature_cols:
-        x[col] = pd.to_numeric(x[col], errors="coerce")
-        x[col] = x[col].fillna(x[col].median())
-
-    scaler = StandardScaler()
-    x_scaled = scaler.fit_transform(x)
-
-    km = KMeans(n_clusters=4, random_state=42, n_init=10)
-    clusters = km.fit_predict(x_scaled)
-
-    return clusters
-
-
-def build_cluster_names(df):
-    score_cols = [f"SCORE_VAR_{v}" for dim in DIMENSIONS.values() for v in dim["variables"].keys()]
-    cluster_names = {}
-
-    overall_means = df[score_cols].mean()
-
-    for cluster_id in sorted(df["CLUSTER_K4"].unique()):
-        sub = df[df["CLUSTER_K4"] == cluster_id]
-        cluster_means = sub[score_cols].mean()
-        lift = (cluster_means - overall_means).sort_values(ascending=False)
-
-        top_vars = []
-        for col in lift.index:
-            raw_var = col.replace("SCORE_VAR_", "")
-            if raw_var in CLUSTER_DESCRIPTORS:
-                top_vars.append(CLUSTER_DESCRIPTORS[raw_var])
-            if len(top_vars) == 2:
-                break
-
-        if len(top_vars) == 0:
-            cluster_names[cluster_id] = "sin rasgo dominante claro"
-        elif len(top_vars) == 1:
-            cluster_names[cluster_id] = top_vars[0]
-        else:
-            cluster_names[cluster_id] = f"{top_vars[0]} y {top_vars[1]}"
-
-    return cluster_names
+    return out.sort_values(["SCORE_ESCENARIO", "VARIABILIDAD_ENTRE_ESCENARIOS"], ascending=[False, True])
 
 
 def get_top_subdimensions(row, top_n=3):
@@ -470,25 +468,13 @@ def get_top_subdimensions(row, top_n=3):
                 {
                     "label": var_meta["label"],
                     "dimension": dim_meta["label"],
-                    "score": row[f"SCORE_VAR_{var}"],
+                    "score0": row[f"SCORE0_{var}"],
                     "contrib": row[f"CONTRIB_SCEN_VAR_{var}"],
                     "var": var,
                 }
             )
     items = sorted(items, key=lambda x: x["contrib"], reverse=True)
     return items[:top_n]
-
-
-def fmt_num(x, decimals=2):
-    if pd.isna(x):
-        return ""
-    return f"{x:,.{decimals}f}"
-
-
-def fmt_int(x):
-    if pd.isna(x):
-        return ""
-    return f"{int(x):,}"
 
 
 def render_html_table(df):
@@ -503,21 +489,28 @@ def render_html_table_multiindex(df):
 
 def build_grouped_context(df, scenario_name):
     out = df[[
-        "RANK", "ID_ZONA", "NOMBRE_ZONA", "CLUSTER_FILTER", "CLUSTER_DESC", "SCORE_ESCENARIO"
+        "RANK", "RANKING_GLOBAL", "ID_ZONA", "NOMBRE_ZONA", "CLUSTER_FILTER",
+        "CLUSTER_DESC", "SCORE_ESCENARIO", "VARIABILIDAD_ENTRE_ESCENARIOS", "CONSISTENCIA_ESCENARIOS"
     ]].head(10).copy()
+
     out["ESCENARIO"] = scenario_name
     out = out.rename(columns={
-        "RANK": "Rank",
+        "RANK": "Rank escenario",
+        "RANKING_GLOBAL": "Ranking global",
         "ID_ZONA": "ID zona",
         "NOMBRE_ZONA": "Zona",
         "CLUSTER_FILTER": "Cluster",
-        "CLUSTER_DESC": "Nombre del cluster",
+        "CLUSTER_DESC": "Perfil del cluster",
         "SCORE_ESCENARIO": "Score escenario",
+        "VARIABILIDAD_ENTRE_ESCENARIOS": "Variabilidad",
+        "CONSISTENCIA_ESCENARIOS": "Consistencia",
         "ESCENARIO": "Escenario",
     })
 
-    out["Rank"] = out["Rank"].apply(fmt_int)
+    out["Rank escenario"] = out["Rank escenario"].apply(fmt_int)
+    out["Ranking global"] = out["Ranking global"].apply(fmt_int)
     out["Score escenario"] = out["Score escenario"].apply(lambda x: fmt_num(x, 2))
+    out["Variabilidad"] = out["Variabilidad"].apply(lambda x: fmt_num(x, 2))
     return out
 
 
@@ -525,23 +518,23 @@ def build_grouped_dimensions(df):
     out = df[[
         "RANK",
         "NOMBRE_ZONA",
-        "SCORE_DIM_DEMANDA",
-        "SCORE_DIM_MOVILIDAD",
-        "SCORE_DIM_SEGURIDAD",
-        "SCORE_DIM_PUNTOS_INTERES",
-        "SCORE_DIM_COMPETENCIA",
-        "SCORE_DIM_COSTE",
+        "DEMANDA",
+        "MOVILIDAD",
+        "SEGURIDAD",
+        "PTOS_INTERES",
+        "COMPETENCIA",
+        "COSTE",
     ]].head(10).copy()
 
     out = out.rename(columns={
         "RANK": "Rank",
         "NOMBRE_ZONA": "Zona",
-        "SCORE_DIM_DEMANDA": "Demanda",
-        "SCORE_DIM_MOVILIDAD": "Movilidad",
-        "SCORE_DIM_SEGURIDAD": "Seguridad",
-        "SCORE_DIM_PUNTOS_INTERES": "Puntos de interés",
-        "SCORE_DIM_COMPETENCIA": "Competencia",
-        "SCORE_DIM_COSTE": "Coste",
+        "DEMANDA": "Demanda",
+        "MOVILIDAD": "Movilidad",
+        "SEGURIDAD": "Seguridad",
+        "PTOS_INTERES": "Puntos de interés",
+        "COMPETENCIA": "Competencia",
+        "COSTE": "Coste",
     })
 
     out["Rank"] = out["Rank"].apply(fmt_int)
@@ -614,13 +607,17 @@ def allocate_remaining(selected_dim, selected_value, dims, total, min_each, max_
     return final_weights
 
 
+def format_weights_text(weights_dict):
+    return " · ".join([f"{DIMENSIONS[k]['label']}: {v}%" for k, v in weights_dict.items()])
+
+
 def top_vars_for_dimension(row, dim_key, n=2):
     items = []
     for var, var_meta in DIMENSIONS[dim_key]["variables"].items():
         items.append(
             {
                 "label": var_meta["label"],
-                "score": row[f"SCORE_VAR_{var}"],
+                "score": row[f"SCORE0_{var}"],
             }
         )
     items = sorted(items, key=lambda x: x["score"], reverse=True)
@@ -647,8 +644,8 @@ def demand_summary_text(row):
 
 
 def mobility_summary_text(row):
-    mov = row["SCORE_VAR_MOVILIDAD_PROMEDIO_DIARIA"]
-    est = row["SCORE_VAR_MOV_CANTIDAD_ESTACIONES"]
+    mov = row["SCORE0_MOVILIDAD_PROMEDIO_DIARIA"]
+    est = row["SCORE0_MOV_CANTIDAD_ESTACIONES"]
     level_mov = classify_level(mov)
     level_est = classify_level(est)
 
@@ -673,7 +670,7 @@ def security_summary_text(row):
 
 
 def poi_summary_text(row):
-    top_item = top_vars_for_dimension(row, "PUNTOS_INTERES", n=1)[0]
+    top_item = top_vars_for_dimension(row, "PTOS_INTERES", n=1)[0]
     return (
         f"El principal aporte dentro de la dimensión proviene de {top_item['label'].lower()}, "
         f"con puntuación {classify_level(top_item['score'])}."
@@ -681,13 +678,13 @@ def poi_summary_text(row):
 
 
 def competition_summary_text(row):
-    direct = row["SCORE_VAR_COMPETENCIA_DIRECTA_KM2"]
-    indirect = row["SCORE_VAR_COMPETENCIA_INDIRECTA_KM2"]
+    direct = row["SCORE0_COMPETENCIA_DIRECTA_KM2"]
+    indirect = row["SCORE0_COMPETENCIA_INDIRECTA_KM2"]
 
     better = "competencia indirecta" if indirect >= direct else "competencia directa"
     worse = "competencia directa" if indirect >= direct else "competencia indirecta"
 
-    dim_score = row["SCORE_DIM_COMPETENCIA"]
+    dim_score = row["COMPETENCIA"]
 
     if dim_score >= 70:
         intro = "Lo que indica una presión competitiva relativamente más moderada dentro del modelo."
@@ -700,7 +697,7 @@ def competition_summary_text(row):
 
 
 def cost_summary_text(row):
-    score = row["SCORE_VAR_ALQ_PRECIO_PIE2_ANUAL"]
+    score = row["SCORE0_ALQ_PRECIO_PIE2_ANUAL"]
 
     if score >= 70:
         return "Lo que indica un nivel de alquiler relativamente más bajo dentro del conjunto analizado."
@@ -711,7 +708,7 @@ def cost_summary_text(row):
 
 def dimension_summary_line(row, dim_key):
     dim_label = DIMENSIONS[dim_key]["label"]
-    dim_score = row[f"SCORE_DIM_{dim_key}"]
+    dim_score = row[dim_key]
     level = classify_level(dim_score)
 
     if dim_key == "DEMANDA":
@@ -720,7 +717,7 @@ def dimension_summary_line(row, dim_key):
         detail = mobility_summary_text(row)
     elif dim_key == "SEGURIDAD":
         detail = security_summary_text(row)
-    elif dim_key == "PUNTOS_INTERES":
+    elif dim_key == "PTOS_INTERES":
         detail = poi_summary_text(row)
     elif dim_key == "COMPETENCIA":
         detail = competition_summary_text(row)
@@ -732,39 +729,37 @@ def dimension_summary_line(row, dim_key):
     return f"- **{dim_label}**: puntuación {level} ({dim_score:.1f}/100). {detail}"
 
 
-def get_filter_defaults(scenario_scored, all_clusters):
-    return {
-        "filter_score_range": (
-            float(scenario_scored["SCORE_ESCENARIO"].min()),
-            float(scenario_scored["SCORE_ESCENARIO"].max()),
-        ),
-        "filter_rent_range": (
-            float(scenario_scored["ALQ_PRECIO_PIE2_ANUAL"].min()),
-            float(scenario_scored["ALQ_PRECIO_PIE2_ANUAL"].max()),
-        ),
-        "filter_competition_range": (
-            float(scenario_scored["COMPETENCIA_DIRECTA_KM2"].min()),
-            float(scenario_scored["COMPETENCIA_DIRECTA_KM2"].max()),
-        ),
-        "filter_mobility_range": (
-            float(scenario_scored["MOVILIDAD_PROMEDIO_DIARIA"].min()),
-            float(scenario_scored["MOVILIDAD_PROMEDIO_DIARIA"].max()),
-        ),
-        "filter_zones": sorted(scenario_scored["NOMBRE_ZONA"].dropna().unique().tolist()),
-        "filter_clusters": sorted(all_clusters),
-    }
+def ensure_filter_state(key, value):
+    if key not in st.session_state:
+        st.session_state[key] = value
 
 
-def reset_filters_callback(defaults):
+def reset_filter_state(defaults):
     for k, v in defaults.items():
         st.session_state[k] = v
 
 
-def sync_filter_state_with_scenario(scenario_name, defaults):
-    key = "active_scenario_for_filters"
-    if st.session_state.get(key) != scenario_name:
-        reset_filters_callback(defaults)
-        st.session_state[key] = scenario_name
+def get_filter_defaults(df, cluster_options):
+    return {
+        "filter_clusters": cluster_options,
+        "filter_score_range": (
+            float(df["SCORE_ESCENARIO"].min()),
+            float(df["SCORE_ESCENARIO"].max()),
+        ),
+        "filter_rent_range": (
+            float(df["ALQ_PRECIO_PIE2_ANUAL"].min()),
+            float(df["ALQ_PRECIO_PIE2_ANUAL"].max()),
+        ),
+        "filter_competition_range": (
+            float(df["COMPETENCIA_DIRECTA_KM2"].min()),
+            float(df["COMPETENCIA_DIRECTA_KM2"].max()),
+        ),
+        "filter_mobility_range": (
+            float(df["MOVILIDAD_PROMEDIO_DIARIA"].min()),
+            float(df["MOVILIDAD_PROMEDIO_DIARIA"].max()),
+        ),
+        "filter_zones": sorted(df["NOMBRE_ZONA"].dropna().unique().tolist()),
+    }
 
 
 def initialize_weight_state(state_key, defaults):
@@ -779,18 +774,16 @@ st.title("TFM GRUPO 7 SITE SELECTION MANHATTAN")
 st.caption("Aplicación interactiva para scoring multicriterio, escenarios de decisión y análisis territorial.")
 
 try:
-    df, geojson = load_data()
+    raw_df, micro_df, macro_df, consolidado_df, geojson = load_data()
+    df = prepare_dataframe(raw_df, micro_df, macro_df, consolidado_df)
 except Exception as e:
     st.error(str(e))
     st.stop()
 
 missing_cols = validate_columns(df)
 if missing_cols:
-    st.error(f"Faltan columnas necesarias en el CSV maestro: {missing_cols}")
+    st.error(f"Faltan columnas necesarias para la aplicación: {missing_cols}")
     st.stop()
-
-df["ID_ZONA"] = df["ID_ZONA"].apply(clean_zone_id)
-df["NOMBRE_ZONA"] = df["NOMBRE_ZONA"].astype(str).str.strip()
 
 geo_field = detect_geojson_id_field(geojson)
 if geo_field is None:
@@ -800,24 +793,22 @@ if geo_field is None:
 geojson_ids = extract_geojson_ids(geojson, geo_field)
 geojson_id_set = set([x for x in geojson_ids if x is not None])
 
-all_feature_cols = []
-for dim_meta in DIMENSIONS.values():
-    all_feature_cols.extend(list(dim_meta["variables"].keys()))
-
-df = compute_dimension_scores(df)
-
-clusters = compute_clusters(df, all_feature_cols)
-df["CLUSTER_K4"] = (clusters + 1).astype(int)
-
-cluster_names = build_cluster_names(df)
-df["CLUSTER_DESC"] = df["CLUSTER_K4"].map(cluster_names)
-df["CLUSTER_FILTER"] = df["CLUSTER_K4"].map(CLUSTER_LABELS)
-
 
 # =========================================================
 # SIDEBAR
 # =========================================================
-st.sidebar.header("Escenario y filtros")
+st.sidebar.header("Filtros y escenario")
+
+all_cluster_options = sorted([c for c in df["CLUSTER"].dropna().unique().tolist()])
+ensure_filter_state("filter_clusters", all_cluster_options)
+
+selected_clusters = st.sidebar.multiselect(
+    "Cluster",
+    options=all_cluster_options,
+    default=st.session_state["filter_clusters"],
+    format_func=lambda x: CLUSTER_LABELS.get(int(x), f"Cluster {x}"),
+    key="filter_clusters",
+)
 
 scenario_name = st.sidebar.selectbox(
     "Escenario de decisión",
@@ -826,6 +817,7 @@ scenario_name = st.sidebar.selectbox(
 
 scenario = SCENARIOS[scenario_name]
 
+default_weights_text = format_weights_text(scenario["weights"])
 st.sidebar.markdown(
     f"""
     <div class="scenario-box">
@@ -836,11 +828,20 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
-st.sidebar.markdown("### Ajuste de pesos")
-st.sidebar.caption(
-    "En cada escenario, las dimensiones principales concentran el 60% del peso total y las dimensiones de contexto el 40%. "
-    "Puedes modificar varias dimensiones de forma acumulativa dentro de cada bloque, y la aplicación reajusta automáticamente las demás para conservar esa lógica."
+st.sidebar.markdown(
+    f"""
+    <div class="note-box">
+        <strong>Pesos por defecto del escenario</strong><br>
+        {default_weights_text}<br><br>
+        <strong>Nota de interacción:</strong> las dimensiones principales concentran el 60% del peso total
+        y las dimensiones de contexto el 40%. Puedes modificar los pesos dentro de cada bloque,
+        y la aplicación reajusta automáticamente las demás dimensiones para conservar esta lógica.
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
+
+st.sidebar.markdown("### Ajuste de pesos")
 
 # PRINCIPALES
 st.sidebar.markdown("**Dimensiones principales**")
@@ -950,20 +951,24 @@ effective_weights = {**st.session_state[main_weights_key], **st.session_state[co
 scenario_scored = compute_scenario_scores(df, effective_weights)
 
 # FILTROS
-st.sidebar.markdown("### Filtros")
+st.sidebar.markdown("### Filtros adicionales")
 
-all_cluster_options = sorted(df["CLUSTER_FILTER"].dropna().unique().tolist())
 filter_defaults = get_filter_defaults(scenario_scored, all_cluster_options)
-sync_filter_state_with_scenario(scenario_name, filter_defaults)
+ensure_filter_state("filter_score_range", filter_defaults["filter_score_range"])
+ensure_filter_state("filter_rent_range", filter_defaults["filter_rent_range"])
+ensure_filter_state("filter_competition_range", filter_defaults["filter_competition_range"])
+ensure_filter_state("filter_mobility_range", filter_defaults["filter_mobility_range"])
+ensure_filter_state("filter_zones", filter_defaults["filter_zones"])
 
 if st.sidebar.button("Restablecer filtros", use_container_width=True):
-    reset_filters_callback(filter_defaults)
+    reset_filter_state(filter_defaults)
     st.rerun()
 
 score_range = st.sidebar.slider(
     "Score del escenario (0–100)",
     min_value=0.0,
     max_value=100.0,
+    value=st.session_state["filter_score_range"],
     key="filter_score_range",
 )
 
@@ -971,6 +976,7 @@ rent_range = st.sidebar.slider(
     "Alquiler (USD/pie²/año)",
     min_value=float(scenario_scored["ALQ_PRECIO_PIE2_ANUAL"].min()),
     max_value=float(scenario_scored["ALQ_PRECIO_PIE2_ANUAL"].max()),
+    value=st.session_state["filter_rent_range"],
     key="filter_rent_range",
 )
 
@@ -978,56 +984,67 @@ competition_range = st.sidebar.slider(
     "Competencia directa (competidores/km²)",
     min_value=float(scenario_scored["COMPETENCIA_DIRECTA_KM2"].min()),
     max_value=float(scenario_scored["COMPETENCIA_DIRECTA_KM2"].max()),
+    value=st.session_state["filter_competition_range"],
     key="filter_competition_range",
 )
 
 mobility_range = st.sidebar.slider(
-    "Movilidad (promedio diario de personas)",
+    "Movilidad promedio diaria",
     min_value=float(scenario_scored["MOVILIDAD_PROMEDIO_DIARIA"].min()),
     max_value=float(scenario_scored["MOVILIDAD_PROMEDIO_DIARIA"].max()),
+    value=st.session_state["filter_mobility_range"],
     key="filter_mobility_range",
 )
 
+zone_options = sorted(scenario_scored["NOMBRE_ZONA"].dropna().unique().tolist())
 selected_zones = st.sidebar.multiselect(
     "Zonas",
-    options=sorted(scenario_scored["NOMBRE_ZONA"].dropna().unique().tolist()),
+    options=zone_options,
+    default=st.session_state["filter_zones"],
     key="filter_zones",
 )
 
-selected_clusters = st.sidebar.multiselect(
-    "Clusters",
-    options=all_cluster_options,
-    key="filter_clusters",
-)
 
-filtered = scenario_scored[
-    scenario_scored["SCORE_ESCENARIO"].between(score_range[0], score_range[1])
-    & scenario_scored["ALQ_PRECIO_PIE2_ANUAL"].between(rent_range[0], rent_range[1])
-    & scenario_scored["COMPETENCIA_DIRECTA_KM2"].between(competition_range[0], competition_range[1])
-    & scenario_scored["MOVILIDAD_PROMEDIO_DIARIA"].between(mobility_range[0], mobility_range[1])
-    & scenario_scored["NOMBRE_ZONA"].isin(selected_zones)
-    & scenario_scored["CLUSTER_FILTER"].isin(selected_clusters)
+# =========================================================
+# APLICACIÓN DE FILTROS
+# =========================================================
+filtered = scenario_scored.copy()
+
+if selected_clusters:
+    filtered = filtered[filtered["CLUSTER"].isin(selected_clusters)].copy()
+else:
+    filtered = filtered.iloc[0:0].copy()
+
+filtered = filtered[
+    filtered["SCORE_ESCENARIO"].between(score_range[0], score_range[1]) &
+    filtered["ALQ_PRECIO_PIE2_ANUAL"].between(rent_range[0], rent_range[1]) &
+    filtered["COMPETENCIA_DIRECTA_KM2"].between(competition_range[0], competition_range[1]) &
+    filtered["MOVILIDAD_PROMEDIO_DIARIA"].between(mobility_range[0], mobility_range[1])
 ].copy()
 
-if filtered.empty:
-    st.warning("No hay zonas que cumplan los filtros actuales.")
-    st.stop()
+if selected_zones:
+    filtered = filtered[filtered["NOMBRE_ZONA"].isin(selected_zones)].copy()
+else:
+    filtered = filtered.iloc[0:0].copy()
 
-filtered = filtered.sort_values("SCORE_ESCENARIO", ascending=False).reset_index(drop=True)
-filtered["RANK"] = filtered["SCORE_ESCENARIO"].rank(ascending=False, method="dense").astype(int)
+filtered = filtered.sort_values(["SCORE_ESCENARIO", "VARIABILIDAD_ENTRE_ESCENARIOS"], ascending=[False, True])
+
+if filtered.empty:
+    st.warning("No hay zonas que cumplan con la combinación actual de escenario, pesos y filtros.")
+    st.stop()
 
 best_zone = filtered.iloc[0]
 top_subdims = get_top_subdimensions(best_zone, top_n=3)
-top_subdim_text = " · ".join([x["label"] for x in top_subdims])
+top_subdim_text = " · ".join([f"{x['label']} ({fmt_num(x['contrib'], 1)})" for x in top_subdims])
 
 
 # =========================================================
 # RESUMEN DE FILTROS ACTIVOS
 # =========================================================
 st.markdown("### Filtros activos")
-st.caption("Resumen del escenario y de las restricciones actualmente aplicadas al análisis.")
+st.caption("Resumen del escenario, los pesos efectivos y las restricciones actualmente aplicadas al análisis.")
 
-excluded_clusters = [c for c in all_cluster_options if c not in selected_clusters]
+excluded_clusters = [CLUSTER_LABELS[c] for c in all_cluster_options if c not in selected_clusters]
 excluded_clusters_text = ", ".join(excluded_clusters) if excluded_clusters else "ninguno"
 
 chips = [
@@ -1040,11 +1057,21 @@ chips = [
 ]
 render_chips(chips)
 
+st.markdown(
+    f"""
+    <div class="note-box">
+        <strong>Pesos efectivos aplicados</strong><br>
+        {format_weights_text(effective_weights)}
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # =========================================================
 # KPIS
 # =========================================================
-c1, c2, c3, c4 = st.columns([2.2, 1.1, 1.1, 1.9])
+c1, c2, c3, c4, c5 = st.columns([2.0, 1.2, 1.0, 1.5, 1.4])
 
 with c1:
     metric_card(
@@ -1069,6 +1096,13 @@ with c3:
 
 with c4:
     metric_card(
+        "Ranking global",
+        fmt_int(best_zone["RANKING_GLOBAL"]),
+        best_zone["CONSISTENCIA_ESCENARIOS"],
+    )
+
+with c5:
+    metric_card(
         "Subdimensiones dominantes",
         top_subdim_text,
         "Top 3 variables con mayor aporte",
@@ -1089,15 +1123,15 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(
 with tab1:
     st.subheader("Mapa interactivo por escenario y dimensiones")
 
-    map_options = ["SCORE_ESCENARIO"] + [f"SCORE_DIM_{d}" for d in DIMENSIONS.keys()]
+    map_options = ["SCORE_ESCENARIO"] + list(DIMENSIONS.keys())
     option_labels = {
         "SCORE_ESCENARIO": f"Score final - {scenario_name}",
-        "SCORE_DIM_DEMANDA": "Censo (Demanda)",
-        "SCORE_DIM_MOVILIDAD": "Movilidad",
-        "SCORE_DIM_SEGURIDAD": "Seguridad",
-        "SCORE_DIM_PUNTOS_INTERES": "Puntos de interés",
-        "SCORE_DIM_COMPETENCIA": "Competencia",
-        "SCORE_DIM_COSTE": "Coste",
+        "DEMANDA": "Censo (Demanda)",
+        "MOVILIDAD": "Movilidad",
+        "SEGURIDAD": "Seguridad",
+        "PTOS_INTERES": "Puntos de interés",
+        "COMPETENCIA": "Competencia",
+        "COSTE": "Coste",
     }
 
     map_metric = st.selectbox(
@@ -1126,17 +1160,19 @@ with tab1:
             "CLUSTER_FILTER": True,
             "SCORE_ESCENARIO": ":.2f",
             "RANK": True,
-            "SCORE_DIM_DEMANDA": ":.2f",
-            "SCORE_DIM_MOVILIDAD": ":.2f",
-            "SCORE_DIM_SEGURIDAD": ":.2f",
-            "SCORE_DIM_PUNTOS_INTERES": ":.2f",
-            "SCORE_DIM_COMPETENCIA": ":.2f",
-            "SCORE_DIM_COSTE": ":.2f",
+            "DEMANDA": ":.2f",
+            "MOVILIDAD": ":.2f",
+            "SEGURIDAD": ":.2f",
+            "PTOS_INTERES": ":.2f",
+            "COMPETENCIA": ":.2f",
+            "COSTE": ":.2f",
         },
         mapbox_style="carto-positron",
         center={"lat": 40.7831, "lon": -73.9712},
         zoom=10.4,
         opacity=0.78,
+        color_continuous_scale="Viridis",
+        range_color=(0, 100),
     )
 
     fig_map.update_layout(
@@ -1151,7 +1187,7 @@ with tab1:
         dimension_summary_line(best_zone, "DEMANDA"),
         dimension_summary_line(best_zone, "MOVILIDAD"),
         dimension_summary_line(best_zone, "SEGURIDAD"),
-        dimension_summary_line(best_zone, "PUNTOS_INTERES"),
+        dimension_summary_line(best_zone, "PTOS_INTERES"),
         dimension_summary_line(best_zone, "COMPETENCIA"),
         dimension_summary_line(best_zone, "COSTE"),
     ]
@@ -1179,7 +1215,7 @@ with tab2:
     st.markdown('<div class="group-title">Dimensiones</div>', unsafe_allow_html=True)
     render_html_table(build_grouped_dimensions(filtered))
 
-    st.markdown('<div class="group-title">Subdimensiones</div>', unsafe_allow_html=True)
+    st.markdown('<div class="group-title">Subdimensiones (valores originales)</div>', unsafe_allow_html=True)
     render_html_table_multiindex(build_grouped_subdimensions(filtered))
 
     csv_download = filtered.to_csv(index=False).encode("utf-8-sig")
@@ -1200,117 +1236,62 @@ with tab3:
     top10_chart = filtered.head(10).copy()
     top10_chart["score_txt"] = top10_chart["SCORE_ESCENARIO"].round(1)
 
-    fig_top10 = px.bar(
+    fig_bar = px.bar(
         top10_chart.sort_values("SCORE_ESCENARIO", ascending=True),
         x="SCORE_ESCENARIO",
         y="NOMBRE_ZONA",
         orientation="h",
         text="score_txt",
-        color="SCORE_ESCENARIO",
-        title=f"Top 10 zonas por score - {scenario_name}",
+        color="CLUSTER_FILTER",
+        labels={
+            "SCORE_ESCENARIO": "Score del escenario",
+            "NOMBRE_ZONA": "Zona",
+            "CLUSTER_FILTER": "Cluster",
+        },
     )
-    fig_top10.update_layout(height=500, margin=dict(l=0, r=0, t=50, b=0))
-    st.plotly_chart(fig_top10, use_container_width=True)
+    fig_bar.update_traces(textposition="outside")
+    fig_bar.update_layout(height=520, margin=dict(l=0, r=20, t=10, b=0))
+    st.plotly_chart(fig_bar, use_container_width=True)
 
-    col_a, col_b = st.columns(2)
-
-    with col_a:
-        cluster_dim = (
-            filtered.groupby(["CLUSTER_FILTER", "CLUSTER_DESC"], as_index=False)[[
-                "SCORE_DIM_DEMANDA",
-                "SCORE_DIM_MOVILIDAD",
-                "SCORE_DIM_SEGURIDAD",
-                "SCORE_DIM_PUNTOS_INTERES",
-                "SCORE_DIM_COMPETENCIA",
-                "SCORE_DIM_COSTE",
-            ]]
-            .mean()
-        )
-
-        heat = cluster_dim.melt(
-            id_vars=["CLUSTER_FILTER", "CLUSTER_DESC"],
-            var_name="Dimensión",
-            value_name="Puntuación promedio",
-        )
-
-        heat["Dimensión"] = heat["Dimensión"].replace({
-            "SCORE_DIM_DEMANDA": "Demanda",
-            "SCORE_DIM_MOVILIDAD": "Movilidad",
-            "SCORE_DIM_SEGURIDAD": "Seguridad",
-            "SCORE_DIM_PUNTOS_INTERES": "Puntos de interés",
-            "SCORE_DIM_COMPETENCIA": "Competencia",
-            "SCORE_DIM_COSTE": "Coste",
-        })
-
-        heat["Cluster"] = heat["CLUSTER_FILTER"] + " — " + heat["CLUSTER_DESC"]
-
-        fig_cluster = px.density_heatmap(
-            heat,
-            x="Dimensión",
-            y="Cluster",
-            z="Puntuación promedio",
-            text_auto=".1f",
-            color_continuous_scale="Tealgrn",
-            title="Perfil promedio por dimensiones de cada cluster",
-        )
-        fig_cluster.update_layout(height=460, margin=dict(l=0, r=0, t=50, b=0))
-        st.plotly_chart(fig_cluster, use_container_width=True)
-
-    with col_b:
-        fig_scatter = px.scatter(
-            filtered,
-            x="ALQ_PRECIO_PIE2_ANUAL",
-            y="MOVILIDAD_PROMEDIO_DIARIA",
-            color="SCORE_ESCENARIO",
-            size="SCORE_ESCENARIO",
-            hover_name="NOMBRE_ZONA",
-            title="Alquiler vs movilidad",
-            labels={
-                "ALQ_PRECIO_PIE2_ANUAL": "Alquiler (USD/pie²/año)",
-                "MOVILIDAD_PROMEDIO_DIARIA": "Movilidad (promedio diario de personas)",
-            }
-        )
-        fig_scatter.update_layout(height=460, margin=dict(l=0, r=0, t=50, b=0))
-        st.plotly_chart(fig_scatter, use_container_width=True)
-
-    st.markdown("### Comparativa dimensional del Top 5")
-
-    top5_dims = filtered.head(5)[[
-        "NOMBRE_ZONA",
-        "SCORE_DIM_DEMANDA",
-        "SCORE_DIM_MOVILIDAD",
-        "SCORE_DIM_SEGURIDAD",
-        "SCORE_DIM_PUNTOS_INTERES",
-        "SCORE_DIM_COMPETENCIA",
-        "SCORE_DIM_COSTE",
-    ]].copy()
-
-    top5_dims = top5_dims.rename(columns={
-        "NOMBRE_ZONA": "Zona",
-        "SCORE_DIM_DEMANDA": "Demanda",
-        "SCORE_DIM_MOVILIDAD": "Movilidad",
-        "SCORE_DIM_SEGURIDAD": "Seguridad",
-        "SCORE_DIM_PUNTOS_INTERES": "Puntos de interés",
-        "SCORE_DIM_COMPETENCIA": "Competencia",
-        "SCORE_DIM_COSTE": "Coste",
+    compare_top = filtered.head(5).copy()
+    compare_dims = compare_top[["NOMBRE_ZONA", "DEMANDA", "MOVILIDAD", "SEGURIDAD", "PTOS_INTERES", "COMPETENCIA", "COSTE"]]
+    compare_dims = compare_dims.melt(id_vars="NOMBRE_ZONA", var_name="Dimension", value_name="Score")
+    compare_dims["Dimension"] = compare_dims["Dimension"].map({
+        "DEMANDA": "Demanda",
+        "MOVILIDAD": "Movilidad",
+        "SEGURIDAD": "Seguridad",
+        "PTOS_INTERES": "Puntos de interés",
+        "COMPETENCIA": "Competencia",
+        "COSTE": "Coste",
     })
 
-    dims_melt = top5_dims.melt(
-        id_vars="Zona",
-        var_name="Dimensión",
-        value_name="Puntuación",
-    )
-
-    fig_dims = px.bar(
-        dims_melt,
-        x="Dimensión",
-        y="Puntuación",
-        color="Zona",
+    fig_compare = px.bar(
+        compare_dims,
+        x="Dimension",
+        y="Score",
+        color="NOMBRE_ZONA",
         barmode="group",
-        title="Desempeño por dimensiones del Top 5",
+        labels={"Score": "Puntuación", "NOMBRE_ZONA": "Zona"},
     )
-    fig_dims.update_layout(height=520, margin=dict(l=0, r=0, t=50, b=0))
-    st.plotly_chart(fig_dims, use_container_width=True)
+    fig_compare.update_layout(height=520, margin=dict(l=0, r=20, t=10, b=0))
+    st.plotly_chart(fig_compare, use_container_width=True)
+
+    consistency_chart = filtered.head(10).copy()
+    fig_cons = px.scatter(
+        consistency_chart,
+        x="VARIABILIDAD_ENTRE_ESCENARIOS",
+        y="SCORE_ESCENARIO",
+        size="RANKING_GLOBAL",
+        color="CLUSTER_FILTER",
+        hover_name="NOMBRE_ZONA",
+        labels={
+            "VARIABILIDAD_ENTRE_ESCENARIOS": "Variabilidad entre escenarios",
+            "SCORE_ESCENARIO": "Score del escenario",
+            "CLUSTER_FILTER": "Cluster",
+        },
+    )
+    fig_cons.update_layout(height=520, margin=dict(l=0, r=20, t=10, b=0))
+    st.plotly_chart(fig_cons, use_container_width=True)
 
 
 # =========================================================
@@ -1319,122 +1300,53 @@ with tab3:
 with tab4:
     st.subheader("Metodología implementada")
 
+    st.markdown("### Fuentes utilizadas por la aplicación")
     st.markdown(
-        """
-**Estructura del modelo**
-- Nivel micro: ponderación local de variables dentro de cada dimensión.
-- Nivel macro: combinación de dimensiones según el escenario de decisión.
-- Escala final: 0 a 100 puntos.
+        "- **Clusterización**: se carga desde el resultado final seleccionado del repositorio "
+        f"(`{WARD_PATH.relative_to(REPO_ROOT)}`), sin recalcular clusters dentro de la aplicación.\n"
+        "- **Scoring micro**: se carga desde `resultados/05_scoring/scoring_micro.csv`.\n"
+        "- **Scoring macro**: se carga desde `resultados/05_scoring/scoring_macro.csv`.\n"
+        "- **Escenarios consolidados**: se cargan desde `resultados/06_escenarios/consolidado_escenarios.csv`.\n"
+        "- **Cartografía**: se carga desde `datos/crudos/zonas/`."
+    )
 
-**Metodología de normalización**
-- Para la construcción del scoring, las variables se transforman a una escala común de 0 a 100 puntos.
-- Con el fin de reducir la influencia de valores extremos, se emplean los **percentiles 5 y 95** como límites de referencia de cada variable.
-- Los valores inferiores al percentil 5 se tratan como el límite inferior y los valores superiores al percentil 95 como el límite superior dentro de la transformación.
-- En variables de **sentido directo**, valores más altos implican puntuaciones más altas.
-- En variables de **sentido inverso**, valores más altos implican puntuaciones más bajas.
-
-**Regla macro**
-- Dimensiones principales: **60 %**
-- Dimensiones de contexto: **40 %**
-- La app permite modificar varias dimensiones de forma acumulativa dentro de cada bloque y reajusta automáticamente las demás para conservar esa lógica.
-
-**Interpretación de categorías**
-- **Muy alta**: 85 a 100
-- **Alta**: 70 a 84.99
-- **Media**: 40 a 69.99
-- **Baja**: 25 a 39.99
-- **Muy baja**: 0 a 24.99
-
-Estas categorías se aplican sobre la **puntuación transformada (0–100)** y no sobre el valor bruto de la variable.  
-Por eso, una variable o dimensión con puntuación alta significa **mejor desempeño relativo dentro del modelo de scoring**, no necesariamente un valor bruto alto en el dato original.  
-En dimensiones de sentido inverso, una puntuación alta indica una condición relativamente más favorable dentro del conjunto analizado:
-- **Seguridad**: menor exposición relativa al riesgo.
-- **Coste**: menor nivel relativo de alquiler.
-- **Competencia**: menor presión competitiva relativa.
-
-**Dimensiones**
-- Censo (Demanda)
-- Movilidad
-- Seguridad
-- Puntos de interés
-- Competencia
-- Coste
-"""
+    st.markdown("### Lógica del scoring")
+    st.markdown(
+        "La aplicación no recalcula la clusterización ni el scoring micro/macro base. "
+        "Las puntuaciones por dimensión y subdimensión se toman de los resultados ya generados en el repositorio. "
+        "A partir de ellos, la interacción del usuario modifica únicamente la ponderación de las dimensiones en el nivel de escenario."
     )
 
     st.markdown("### Pesos locales por dimensión")
     local_rows = []
     for dim_key, dim_meta in DIMENSIONS.items():
         for var, var_meta in dim_meta["variables"].items():
-            local_rows.append(
-                {
-                    "Dimensión": dim_meta["label"],
-                    "Subdimensión": var_meta["label"],
-                    "Variable": var,
-                    "Peso local (%)": f"{var_meta['weight']}%",
-                    "Sentido": "Directo" if var_meta["sense"] == "direct" else "Inverso",
-                }
-            )
+            local_rows.append({
+                "Dimensión": dim_meta["label"],
+                "Variable": var_meta["label"],
+                "Peso local (%)": var_meta["weight"],
+            })
     render_html_table(pd.DataFrame(local_rows))
 
-    st.markdown("### Zonas por cluster")
-    cluster_list_df = (
-        df.sort_values(["CLUSTER_K4", "NOMBRE_ZONA"])
-        .groupby(["CLUSTER_K4", "CLUSTER_FILTER", "CLUSTER_DESC"])["NOMBRE_ZONA"]
-        .apply(list)
-        .reset_index()
+    st.markdown("### Escenario seleccionado")
+    st.markdown(
+        f"**Escenario activo:** {scenario_name}\n\n"
+        f"**Pesos por defecto:** {format_weights_text(scenario['weights'])}\n\n"
+        f"**Pesos efectivos actuales:** {format_weights_text(effective_weights)}"
     )
-
-    for _, row in cluster_list_df.iterrows():
-        with st.expander(f"{row['CLUSTER_FILTER']} — {row['CLUSTER_DESC']} | {len(row['NOMBRE_ZONA'])} zonas"):
-            st.write(", ".join(row["NOMBRE_ZONA"]))
 
     st.markdown("### Lectura del gráfico de clusters")
-    st.markdown(
-        """
-- El gráfico muestra el **perfil promedio por dimensiones de cada cluster**.
-- Cada fila representa un cluster y cada columna una dimensión.
-- El valor y el color indican la puntuación media de ese cluster en esa dimensión.
-- Su objetivo es facilitar una lectura más interpretable del agrupamiento territorial.
-"""
+    cluster_info = (
+        df[["CLUSTER", "CLUSTER_FILTER", "CLUSTER_DESC"]]
+        .drop_duplicates()
+        .sort_values("CLUSTER")
+        .rename(columns={
+            "CLUSTER": "ID cluster",
+            "CLUSTER_FILTER": "Etiqueta",
+            "CLUSTER_DESC": "Descripción",
+        })
     )
-
-    st.markdown("### Fórmulas")
-
-    st.markdown("**La transformación aplicada fue la siguiente:**")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("**Para variables de sentido directo:**")
-        st.latex(r"Score_{ij} = 100 \times \frac{x_{ij} - P5(x_j)}{P95(x_j) - P5(x_j)}")
-
-    with c2:
-        st.markdown("**Para variables de sentido inverso:**")
-        st.latex(r"Score_{ij} = 100 \times \frac{P95(x_j) - x_{ij}}{P95(x_j) - P5(x_j)}")
-
-    st.markdown("**La expresión utilizada para la dimensión fue la siguiente:**")
-    st.latex(r"D_{id} = \sum_{j=1}^{n} w_{jd} \cdot Score_{ij}")
-
-    st.markdown("**La expresión utilizada para el escenario fue la siguiente:**")
-    st.latex(r"ScoreEscenario_{is} = \sum_{d=1}^{m} w_{ds} \cdot D_{id}")
-
-    st.markdown("### Leyenda de fórmulas")
-    st.markdown(
-        """
-- **i**: zona analizada o NTA.
-- **j**: variable o subdimensión.
-- **d**: dimensión.
-- **s**: escenario.
-- **xᵢⱼ**: valor observado de la variable *j* en la zona *i*.
-- **P5(xⱼ)**: percentil 5 de la distribución de la variable *j*.
-- **P95(xⱼ)**: percentil 95 de la distribución de la variable *j*.
-- **Scoreᵢⱼ**: puntuación normalizada de la zona *i* en la variable *j*.
-- **wⱼd**: peso local de la variable *j* dentro de la dimensión *d*.
-- **Dᵢd**: puntuación de la zona *i* en la dimensión *d*.
-- **wds**: peso de la dimensión *d* dentro del escenario *s*.
-- **ScoreEscenarioᵢs**: puntuación de la zona *i* en el escenario *s*.
-"""
-    )
+    render_html_table(cluster_info)
 
 
 # =========================================================
@@ -1442,15 +1354,12 @@ En dimensiones de sentido inverso, una puntuación alta indica una condición re
 # =========================================================
 with tab5:
     st.subheader("Limitaciones del modelo")
-
     st.markdown(
         """
-- El análisis se limita a Manhattan y a las NTA como unidad territorial, por lo que no evalúa ubicaciones puntuales.
-- El modelo simplifica la realidad y se basa en variables proxy según la disponibilidad de datos.
-- Los resultados son relativos al conjunto de zonas analizadas, por lo que un score alto no implica una condición óptima absoluta.
-- La recomendación depende de los pesos asignados en cada escenario, por lo que el ranking puede variar.
-- El modelo depende de la calidad, actualización y homogeneidad de las fuentes utilizadas.
-- No incorpora factores cualitativos y operativos clave, por lo que no sustituye la validación en campo.
-- La recomendación obtenida no garantiza el éxito comercial del negocio.
-"""
+        - La aplicación depende de los resultados ya generados en el repositorio; por tanto, no sustituye el pipeline analítico original.
+        - La clusterización mostrada corresponde al resultado final seleccionado (**Ward.D k = 4**) y no se recalcula en tiempo real.
+        - Las modificaciones interactivas afectan únicamente a los pesos de escenario; los pesos locales de las subvariables permanecen fijos.
+        - Los resultados dependen de la calidad y actualidad de las fuentes utilizadas para construir el dataset maestro.
+        - La interpretación territorial debe complementarse con criterios cualitativos y conocimiento del negocio antes de una decisión final de implantación.
+        """
     )
