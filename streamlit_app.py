@@ -837,12 +837,6 @@ all_cluster_options = sorted(df["CLUSTER_FILTER"].dropna().unique().tolist())
 if "filter_clusters" not in st.session_state:
     st.session_state["filter_clusters"] = all_cluster_options
 
-selected_clusters = st.sidebar.multiselect(
-    "Clusters",
-    options=all_cluster_options,
-    key="filter_clusters",
-)
-
 scenario_name = st.sidebar.selectbox(
     "Escenario de decisión",
     options=list(SCENARIOS.keys()),
