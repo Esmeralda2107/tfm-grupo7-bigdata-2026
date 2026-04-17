@@ -475,21 +475,34 @@ def build_cluster_names(df):
         "SCORE_DIM_COMPETENCIA": "competencia",
         "SCORE_DIM_COSTE": "coste",
     }
-    overall_means = df[list(dim_cols.keys())].mean()
     cluster_names = {}
 
     for cluster_id in sorted(df["CLUSTER_K4"].dropna().unique().tolist()):
         sub = df[df["CLUSTER_K4"] == cluster_id]
-        cluster_means = sub[list(dim_cols.keys())].mean()
-        lift = (cluster_means - overall_means).sort_values(ascending=False)
+        cluster_means = sub[list(dim_cols.keys())].mean().sort_values(ascending=False)
 
-        top_dims = [dim_cols[col] for col in lift.index[:2]]
-        if len(top_dims) == 0:
-            cluster_names[cluster_id] = "sin rasgo dominante claro"
-        elif len(top_dims) == 1:
-            cluster_names[cluster_id] = f"predominio relativo de {top_dims[0]}"
+        top_col = cluster_means.index[0]
+        top_val = cluster_means.iloc[0]
+        second_col = cluster_means.index[1]
+        second_val = cluster_means.iloc[1]
+
+        top_label = dim_cols[top_col]
+        second_label = dim_cols[second_col]
+
+        spread = cluster_means.max() - cluster_means.min()
+
+        if top_val >= 85 and second_val < 60:
+            cluster_names[cluster_id] = f"{top_label} muy alta"
+        elif top_val >= 70 and second_val >= 65:
+            cluster_names[cluster_id] = f"{top_label} y {second_label} altas"
+        elif top_val >= 70:
+            cluster_names[cluster_id] = f"{top_label} alta"
+        elif top_val >= 60 and spread <= 20:
+            cluster_names[cluster_id] = "perfil equilibrado"
+        elif top_val >= 60:
+            cluster_names[cluster_id] = f"{top_label} relativamente alta"
         else:
-            cluster_names[cluster_id] = f"predominio relativo de {top_dims[0]} y {top_dims[1]}"
+            cluster_names[cluster_id] = "perfil intermedio"
 
     return cluster_names
 
