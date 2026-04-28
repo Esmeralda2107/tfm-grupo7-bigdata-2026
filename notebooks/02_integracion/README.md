@@ -1,6 +1,6 @@
 # 🔗 Notebooks de Integración
 
-Este directorio contiene los **notebooks de integración** utilizados en la fase intermedia del pipeline de datos del proyecto.
+Este directorio contiene los **notebooks de integración** utilizados en la fase intermedia del flujo de datos del proyecto.
 
 Su función principal es tomar las fuentes ya depuradas en **`datos/limpios/`** y transformarlas en entidades estructuradas y coherentes entre sí, preparadas para su uso dentro de la lógica de base de datos y para la construcción posterior del dataset maestro.
 
