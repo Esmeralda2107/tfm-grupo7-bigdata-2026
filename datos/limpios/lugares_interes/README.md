@@ -4,4 +4,4 @@ Este directorio contiene la **base de lugares de interés en su versión limpia*
 
 En esta etapa, la información fue depurada, reclasificada y estructurada para conservar los atributos relevantes para el análisis territorial. El tratamiento incluyó la normalización de categorías, la depuración de registros y la organización de los lugares según su utilidad analítica dentro del proyecto.
 
-La base resultante incorpora información relacionada con **nombre del lugar, categoría funcional, tipología del equipamiento y localización geográfica**, constituyendo la versión tratada de la dimensión de lugares de interés empleada posteriormente en la integración espacial y consolidación del dataset maestro.
+La base resultante incorpora información relacionada con el **nombre del lugar, categoría funcional, tipología del equipamiento y localización geográfica**, constituyendo la versión tratada de la dimensión de lugares de interés empleada posteriormente en las fases de integración espacial y construcción del dataset maestro.
