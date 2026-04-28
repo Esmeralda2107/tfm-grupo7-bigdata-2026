@@ -250,17 +250,17 @@ CLUSTER_LABELS = {
 }
 
 CLUSTER_NAMES = {
-    1: "Ejes laborales y comerciales",
-    2: "Entornos residenciales con afinidad",
-    3: "Centros de movilidad y saturación",
-    4: "Enclaves residenciales de renta premium",
+    1: "Centro Residencial y Diverso de Manhattan",
+    2: "Alta Intensidad Comercial y Movilidad",
+    3: "Residencia Premium y Densidad Consolidada",
+    4: "Administrativo de Alta Renta y Densidad Corporativa",
 }
 
 CLUSTER_INTERPRETATIONS = {
-    1: "Zonas con presencia relevante de oficinas y actividad comercial, flujo diurno constante y niveles operativos intermedios.",
-    2: "Áreas de carácter más residencial, con mayor afinidad demográfica para la propuesta del negocio y condiciones operativas relativamente controladas.",
-    3: "Núcleos de movilidad muy intensa y presión competitiva elevada, especialmente visibles en áreas centrales de alto tránsito.",
-    4: "Sectores residenciales de mayor valor relativo, seguridad alta y niveles de renta comercial premium.",
+    1: "Núcleo de alta densidad residencial y cohesión demográfica del norte de Manhattan y sectores del East Side, con predominio de uso residencial intensivo y fuerte identidad comunitaria.",
+    2: "Núcleo comercial y de servicios de Manhattan, con máxima conectividad, altísima movilidad y fuerte saturación competitiva en el epicentro funcional de la isla.",
+    3: "Enclave residencial de élite y alta densidad, con población madura y afluente, máximo valor inmobiliario y uso del suelo orientado principalmente a vivienda premium.",
+    4: "Hub administrativo y corporativo de alta renta, definido por la densidad de oficinas, la actividad profesional y el peso de los servicios avanzados en Manhattan.",
 }
 
 
