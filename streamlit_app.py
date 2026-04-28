@@ -137,8 +137,8 @@ DIMENSIONS = {
         "label": "Censo (Demanda)",
         "variables": {
             "POBLACION_KM2": {"label": "Población por km²", "weight": 30, "sense": "direct"},
-            "PORCENTAJE_HISPANOS": {"label": "Porcentaje hispanos", "weight": 15, "sense": "direct"},
-            "EDAD_MEDIANA": {"label": "Edad mediana", "weight": 15, "sense": "direct"},
+            "PORCENTAJE_HISPANOS": {"label": "Porcentaje hispanos", "weight": 20, "sense": "direct"},
+            "EDAD_MEDIANA": {"label": "Edad mediana", "weight": 10, "sense": "direct"},
             "INGRESO_MEDIANO_HOGAR": {"label": "Ingreso mediano del hogar", "weight": 25, "sense": "direct"},
             "TAMANO_HOGAR_PROMEDIO": {"label": "Tamaño hogar promedio", "weight": 15, "sense": "direct"},
         },
@@ -146,8 +146,8 @@ DIMENSIONS = {
     "MOVILIDAD": {
         "label": "Movilidad",
         "variables": {
-            "MOVILIDAD_PROMEDIO_DIARIA": {"label": "Movilidad promedio diaria", "weight": 75, "sense": "direct"},
-            "MOV_CANTIDAD_ESTACIONES": {"label": "Cantidad de estaciones", "weight": 25, "sense": "direct"},
+            "MOVILIDAD_PROMEDIO_DIARIA": {"label": "Movilidad promedio diaria", "weight": 80, "sense": "direct"},
+            "MOV_CANTIDAD_ESTACIONES": {"label": "Cantidad de estaciones", "weight": 20, "sense": "direct"},
         },
     },
     "SEGURIDAD": {
@@ -761,7 +761,7 @@ def dimension_summary_line(row, dim_key):
 
 
 def get_filter_defaults(scenario_scored, all_clusters=None):
-    defaults = {
+    return {
         "filter_score_range": (
             float(scenario_scored["SCORE_ESCENARIO"].min()),
             float(scenario_scored["SCORE_ESCENARIO"].max()),
@@ -780,9 +780,6 @@ def get_filter_defaults(scenario_scored, all_clusters=None):
         ),
         "filter_zones": sorted(scenario_scored["NOMBRE_ZONA"].dropna().unique().tolist()),
     }
-    if all_clusters is not None:
-        defaults["filter_clusters"] = sorted(all_clusters)
-    return defaults
 
 
 def reset_filters_callback(defaults):
@@ -889,7 +886,7 @@ main_defaults = {d: scenario["weights"][d] for d in main_dims}
 main_weights_key = f"main_weights_{scenario_name}"
 initialize_weight_state(main_weights_key, main_defaults)
 
-main_min = 15
+main_min = 16
 main_max = 60
 
 main_selected = st.sidebar.selectbox(
