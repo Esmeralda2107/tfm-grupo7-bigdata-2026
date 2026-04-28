@@ -19,14 +19,16 @@ La principal ventaja funcional del dashboard es que permite **redistribuir los p
 - **dimensiones principales**
 - **dimensiones de contexto**
 
-Este ajuste se realiza dentro de reglas definidas para preservar la estructura del modelo. En la configuración actual de la aplicación:
+Este ajuste se realiza dentro de reglas definidas para preservar la lógica del modelo y evitar configuraciones incoherentes.
 
-- las **dimensiones principales** mantienen un peso mínimo de **16 %**;
-- las **dimensiones de contexto** mantienen un peso mínimo de **5 %** y un máximo de **15 %**;
-- la estructura general del escenario conserva la lógica **60 % / 40 %**, donde el 60 % del peso total se concentra en las dimensiones principales y el 40 % restante en las dimensiones de contexto;
-- el reajuste automático de pesos mantiene la suma total del bloque y evita que se rompa la lógica del escenario. :contentReference[oaicite:2]{index=2}
+En la configuración actual de la aplicación:
 
-La aplicación conserva además los **pesos por defecto del escenario** seleccionado y, cuando el usuario modifica una dimensión, reajusta automáticamente las demás dentro de su bloque. Esto permite explorar distintas sensibilidades estratégicas sin alterar la estructura general del sistema. :contentReference[oaicite:3]{index=3}
+- las **dimensiones principales** mantienen un peso mínimo de **16 %**, con el fin de asegurar que las dimensiones estratégicamente prioritarias conserven un peso suficiente dentro del escenario;
+- las **dimensiones de contexto** mantienen un peso mínimo de **5 %** y un máximo de **15 %**, con el objetivo de que sigan influyendo en la evaluación sin llegar a dominar el escenario frente a las dimensiones principales;
+- la estructura general del escenario conserva la lógica **60 % / 40 %**, donde el **60 %** del peso total se concentra en las dimensiones principales y el **40 %** restante en las dimensiones de contexto, para mantener una jerarquía clara entre el foco estratégico del escenario y los factores complementarios;
+- el reajuste automático de pesos mantiene la suma total de cada bloque y evita que se rompa la lógica interna del escenario, de modo que el usuario pueda explorar configuraciones distintas sin desestructurar el modelo.
+
+La aplicación conserva además los **pesos por defecto del escenario** seleccionado y, cuando el usuario modifica una dimensión, reajusta automáticamente las demás dentro de su bloque. Esto permite explorar distintas sensibilidades estratégicas sin alterar la estructura general del sistema. 
 
 ## 4. Estructura general de la aplicación
 
@@ -43,7 +45,7 @@ La barra lateral concentra la interacción principal del usuario. Desde este esp
 - seleccionar el **escenario de decisión**;
 - ajustar los pesos de las **dimensiones principales** y de las **dimensiones de contexto**;
 - aplicar filtros sobre **score**, **alquiler**, **competencia directa**, **movilidad**, **zonas** y **clusters**;
-- restablecer filtros y volver a la configuración de referencia. :contentReference[oaicite:4]{index=4}
+- restablecer filtros y volver a la configuración de referencia. 
 
 ### 4.2 Indicadores clave (KPI)
 
@@ -52,7 +54,7 @@ En la parte superior de la aplicación se presenta un bloque de **KPI** que resu
 - **Mejor zona**
 - **Score del escenario**
 - **Zonas visibles**
-- **Subdimensiones dominantes** :contentReference[oaicite:5]{index=5}
+- **Subdimensiones dominantes** 
 
 Estos indicadores permiten obtener una lectura rápida del resultado antes de entrar al detalle territorial, tabular o gráfico.
 
@@ -64,7 +66,7 @@ La aplicación incluye las siguientes pestañas:
 - **Ranking**
 - **Gráficos**
 - **Metodología**
-- **Limitaciones del modelo** :contentReference[oaicite:6]{index=6}
+- **Limitaciones del modelo**
 
 Cada una de estas pestañas permite consultar los resultados desde una perspectiva distinta: espacial, comparativa, gráfica o metodológica.
 
@@ -79,7 +81,7 @@ El dashboard permite consultar, bajo la configuración activa del escenario:
 - los resultados por **dimensiones**;
 - gráficos de apoyo a la decisión;
 - la metodología general del modelo;
-- y las limitaciones del sistema. :contentReference[oaicite:7]{index=7}
+- y las limitaciones del sistema. 
 
 Además, la aplicación permite revisar los resultados después de aplicar filtros y ajustes de pesos, lo que facilita una exploración más fina del territorio según distintas prioridades estratégicas.
 
