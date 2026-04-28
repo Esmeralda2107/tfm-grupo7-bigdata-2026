@@ -1,87 +1,132 @@
 # TFM Grupo 7 Big Data 2026
 
-Repositorio técnico del **Trabajo de Fin de Máster del Grupo 7** del Máster en **Big Data & Business Intelligence**, orientado al desarrollo de un **sistema de Location Intelligence** para el análisis territorial de Manhattan.
+Repositorio técnico del proyecto de **Location Intelligence** desarrollado para el análisis territorial de Manhattan y la priorización de zonas para apertura de negocio.
 
-Este repositorio reúne la **memoria técnica y la trazabilidad computacional** del proyecto, incluyendo la organización de las fuentes, los notebooks de procesamiento en Python, la implementación de la base de datos en SQL y la construcción del dataset maestro.
+Este repositorio reúne los datos, notebooks, scripts, resultados, documentación complementaria y la aplicación interactiva necesarios para reproducir el flujo principal del proyecto, desde las fuentes originales hasta la visualización final de resultados.
 
 ## 📂 Estructura del repositorio
 
-- **`datos/`**: organización de los datos según su etapa de procesamiento.
+- **`datos/`**: datos organizados según su etapa de procesamiento.
   - **`crudos/`**: fuentes originales del proyecto.
-  - **`limpios/`**: salidas del proceso de limpieza.
+  - **`limpios/`**: salidas del proceso de limpieza y transformación inicial.
   - **`base_datos/`**: entidades estructuradas para su implementación en SQL.
   - **`maestro/`**: versiones finales del dataset maestro.
-- **`notebooks/`**: notebooks de Python empleados en las fases de limpieza, integración y construcción del dataset maestro.
-- **`scripts/`**: espacio reservado para las fases posteriores del proyecto en R, incluyendo clustering, scoring y escenarios.
-- **`sql/`**: script de implementación de la base de datos y modelo relacional.
-- **`resultados/`**: carpeta destinada a almacenar salidas y resultados de fases analíticas posteriores.
-- **`anexos/`**: documentación complementaria vinculada al TFM.
+- **`notebooks/`**: notebooks de Python utilizados en las fases de limpieza, integración, construcción del dataset maestro, scoring y escenarios.
+- **`scripts/`**: scripts desarrollados en R Markdown para la fase de clustering.
+- **`sql/`**: implementación de la base de datos relacional y modelo entidad–relación.
+- **`resultados/`**: salidas analíticas generadas en las fases de clustering, scoring y escenarios.
+- **`anexos/`**: documentación complementaria del proyecto.
+- **`streamlit_app.py`**: aplicación interactiva para la exploración visual de resultados.
+- **`.streamlit/`**: configuración de la aplicación Streamlit.
+- **`requirements.txt`**: dependencias principales de Python para la ejecución local.
 
-## 🧭 Alcance
+## 🧭 Alcance del repositorio
 
-La presente versión del repositorio documenta y almacena los siguientes materiales desarrollados del TFM:
+Este repositorio incluye el flujo completo de trabajo del proyecto:
 
-- recopilación de fuentes,
-- limpieza y transformación inicial de datos,
-- integración territorial,
-- estructuración de entidades para base de datos,
-- y consolidación del dataset maestro.
-
-Las fases posteriores de **clustering, scoring y escenarios** se incorporarán en etapas siguientes del proyecto.
+- recopilación y organización de fuentes;
+- limpieza y transformación inicial de datos;
+- integración territorial;
+- estructuración de entidades para base de datos;
+- construcción del dataset maestro;
+- segmentación territorial mediante clustering;
+- construcción del sistema de scoring;
+- generación de escenarios de decisión;
+- y visualización final mediante Streamlit.
 
 ## ⚙️ Requisitos previos
 
-Para reproducir localmente esta parte del proyecto se recomienda contar con:
+Para ejecutar localmente el proyecto se recomienda contar con:
 
 - **Python 3.10 o superior**
 - **Jupyter Notebook** o **JupyterLab**
 - **MySQL Server 8.x**
-- **MySQL Workbench** como entorno recomendado para la parte SQL
+- **MySQL Workbench**
+- entorno con soporte para ejecución de **R Markdown** en la fase de clustering
 
-Las librerías necesarias para la ejecución de los notebooks se encuentran recogidas en el archivo **`requirements.txt`** del repositorio.
+Las dependencias principales de Python se encuentran recogidas en el archivo **`requirements.txt`** del repositorio.
 
-## ▶️ Orden general de ejecución del pipeline en Python
+## ▶️ Orden general de ejecución del flujo de trabajo
 
-La ejecución de los notebooks sigue la lógica del flujo de datos del proyecto:
+La lógica general de ejecución del proyecto sigue esta secuencia:
 
-### 1. Limpieza
+### 1. Limpieza de datos
 
-Ejecutar los notebooks de la carpeta:
+Ejecutar los notebooks de:
 
 **`notebooks/01_limpieza/`**
 
 Estos notebooks toman como entrada los archivos de **`datos/crudos/`** y generan las salidas correspondientes en **`datos/limpios/`**.
 
-### 2. Integración
+### 2. Integración territorial
 
-Ejecutar los notebooks de la carpeta:
+Ejecutar los notebooks de:
 
 **`notebooks/02_integracion/`**
 
 Este proceso toma como entrada los archivos de **`datos/limpios/`** y genera las entidades estructuradas almacenadas en **`datos/base_datos/`**.
 
-### 3. Dataset maestro
+### 3. Construcción del dataset maestro
 
-Ejecutar los notebooks de la carpeta:
+Ejecutar los notebooks de:
 
 **`notebooks/03_dataset_maestro/`**
 
 Estos notebooks toman como entrada los archivos de **`datos/base_datos/`** y generan las distintas versiones del dataset maestro en **`datos/maestro/`**.
 
+### 4. Clustering
+
+Ejecutar los scripts de:
+
+**`scripts/04_clustering/`**
+
+Esta fase utiliza como base las versiones analíticas del dataset maestro y genera los resultados de clusterización en **`resultados/04_clustering/`**.
+
+### 5. Scoring
+
+Ejecutar los notebooks de:
+
+**`notebooks/05_scoring/`**
+
+Esta fase toma como entrada el dataset maestro y la solución de clustering seleccionada, y genera las salidas de scoring en **`resultados/05_scoring/`**.
+
+### 6. Escenarios
+
+Ejecutar los notebooks de:
+
+**`notebooks/06_escenarios/`**
+
+Esta fase toma como entrada los resultados de scoring y genera las salidas de escenarios en **`resultados/06_escenarios/`**.
+
+### 7. Visualización interactiva
+
+Ejecutar la aplicación:
+
+**`streamlit_app.py`**
+
+La aplicación permite explorar de forma visual los resultados del modelo a partir de los datos y salidas analíticas del repositorio.
+
 ## 🗄️ Reproducción de la base de datos SQL
 
 La implementación SQL del proyecto se encuentra en la carpeta **`sql/`** y se apoya en las tablas contenidas en **`datos/base_datos/`**.
 
-La carpeta **`sql/`** incluye además el archivo **`Modelo Relacion - Entidad.mwb`**, editable en MySQL Workbench.
+La carpeta **`sql/`** incluye:
 
-Como apoyo complementario, en la carpeta **`anexos/`** se incluye el archivo **`esquema_modelo_logico_tfm.pdf`**, que presenta una representación visual del desarrollo del modelo lógico del sistema.
+- el script principal de creación de la base de datos;
+- y el archivo editable del modelo entidad–relación en MySQL Workbench.
 
-La trazabilidad general del repositorio sigue esta secuencia:
+## 🔄 Trazabilidad general del repositorio
+
+La trazabilidad principal del flujo de trabajo puede resumirse así:
 
 **`datos/crudos/`** → **`notebooks/01_limpieza/`** → **`datos/limpios/`**  
 **`datos/limpios/`** → **`notebooks/02_integracion/`** → **`datos/base_datos/`**  
-**`datos/base_datos/`** → **`notebooks/03_dataset_maestro/`** → **`datos/maestro/`**
+**`datos/base_datos/`** → **`notebooks/03_dataset_maestro/`** → **`datos/maestro/`**  
+**`datos/maestro/`** → **`scripts/04_clustering/`** → **`resultados/04_clustering/`**  
+**`datos/maestro/`** + **`resultados/04_clustering/`** → **`notebooks/05_scoring/`** → **`resultados/05_scoring/`**  
+**`resultados/05_scoring/`** → **`notebooks/06_escenarios/`** → **`resultados/06_escenarios/`**  
+**`datos/`** + **`resultados/`** → **`streamlit_app.py`**
 
 ## 📌 Nota
 
-Este repositorio ha sido organizado con fines de **trazabilidad, documentación técnica y reproducibilidad local** del proyecto. Los README incluidos en cada carpeta explican con mayor detalle el contenido y la función de cada etapa dentro del flujo de trabajo.
+Cada carpeta del repositorio incluye su propio `README.md` con una descripción más específica de su contenido, su función y su relación con el resto del flujo de trabajo.
