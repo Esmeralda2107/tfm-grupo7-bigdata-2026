@@ -8,7 +8,7 @@ En esta etapa, las entidades previamente estructuradas en la carpeta **`datos/ba
 
 Los archivos contenidos en este directorio son el **producto de la ejecución de los notebooks** organizados en la carpeta **`notebooks/03_dataset_maestro/`** del repositorio.
 
-En esta carpeta se incluyen, entre otros, los siguientes resultados:
+En esta carpeta se incluyen los siguientes resultados:
 
 - **`MASTER_DATASET_MANHATTAN.csv`**: versión consolidada inicial del dataset maestro.
 - **`MASTER_DATASET_MANHATTAN_DENSIDAD.csv`**: versión con transformaciones asociadas a métricas de densidad.
