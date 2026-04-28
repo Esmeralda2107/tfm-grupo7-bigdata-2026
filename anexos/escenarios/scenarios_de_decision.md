@@ -93,20 +93,17 @@ Este escenario permite priorizar zonas potencialmente más equilibradas desde el
 
 Con estas ponderaciones, se calcula una puntuación final para cada zona en cada escenario mediante una suma ponderada de las puntuaciones obtenidas previamente en las seis dimensiones.
 
-La expresión general utilizada es la siguiente:
+La expresión general del cálculo es la siguiente:
 
-\[
-S_{is} = \sum_{d=1}^{6} W_{ds} \cdot D_{id}
-\]
+**S(i,s) = Σ [ W(d,s) × D(i,d) ]**
 
 donde:
 
-- \(S_{is}\) representa la puntuación final de la zona \(i\) en el escenario \(s\),
-- \(W_{ds}\) es el peso asignado a la dimensión \(d\) dentro del escenario,
-- \(D_{id}\) corresponde a la puntuación obtenida previamente por la zona en dicha dimensión.
+- **S(i,s)** representa la puntuación final de la zona *i* en el escenario *s*.
+- **W(d,s)** es el peso asignado a la dimensión *d* dentro del escenario *s*.
+- **D(i,d)** corresponde a la puntuación obtenida previamente por la zona *i* en la dimensión *d*.
 
 Bajo esta estructura, el modelo genera una puntuación global de **0 a 100** para cada zona en cada escenario, permitiendo comparar cómo cambia la priorización territorial según el énfasis estratégico aplicado.
-
 ## 5. Finalidad dentro del modelo
 
 La construcción de escenarios constituye la fase en la que el sistema de scoring se transforma en una herramienta de apoyo a la decisión. Su finalidad es permitir una lectura estratégica diferenciada del territorio, mostrando cómo varía la recomendación de localización cuando cambian las prioridades del negocio.
