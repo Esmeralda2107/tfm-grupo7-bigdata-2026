@@ -7,7 +7,7 @@ Los datos aquí almacenados constituyen la **base operativa del sistema de anál
 La organización de esta carpeta responde a las principales etapas del tratamiento de datos:
 
 - **`crudos/`**: contiene las fuentes originales recopiladas para el proyecto.
-- **`limpios/`**: incluye los datos resultantes de los procesos de depuración, transformación y estandarización inicial.
+- **`limpios/`**: incluye los datos resultantes de los procesos de depuración, transformación y estructuración inicial.
 - **`base_datos/`**: reúne las entidades estructuradas para su integración en la base de datos relacional del proyecto.
 - **`maestro/`**: contiene las versiones finales del dataset maestro utilizadas como base para el análisis posterior.
 
