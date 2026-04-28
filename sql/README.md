@@ -1,4 +1,4 @@
- # 🗄️ Implementación SQL del Proyecto
+# 🗄️ Implementación SQL del Proyecto
 
 Este directorio reúne los archivos necesarios para implementar localmente la **base de datos relacional** del proyecto en **MySQL Server**, utilizando como interfaz recomendada **MySQL Workbench**.
 
@@ -34,7 +34,7 @@ Antes de ejecutar esta parte del proyecto, se recomienda tener instalado:
 4. Ejecutar **únicamente la primera parte del script**, correspondiente a:
    - creación de la base de datos,
    - creación de las tablas,
-   - y definición de las claves primarias y foráneas.
+   - definición de las claves primarias y foráneas.
 
 > **Importante:**  
 > No ejecutar todavía la segunda parte del script, ya que contiene las consultas de verificación de carga.
@@ -49,7 +49,6 @@ Después de ejecutar la primera parte del script:
    **`TFM_SiteSelection_Manhattan`**
 
 3. Seleccionarla como esquema activo antes de importar los archivos.
-
 
 ### 3. Preparar las tablas para la carga
 
@@ -78,7 +77,7 @@ Para mantener la integridad de las relaciones entre tablas, los archivos deben c
 > **Nota importante:**  
 > La tabla **`ZONAS`** debe cargarse primero, ya que constituye la **unidad primaria del modelo** y permite la relación entre el resto de tablas mediante el campo **`ID_ZONA`**.
 
-## 4. Importar los archivos CSV en MySQL Workbench
+### 4. Importar los archivos CSV en MySQL Workbench
 
 Para cada tabla:
 
@@ -92,7 +91,7 @@ Para cada tabla:
 
 Se recomienda revisar cada tabla después de la carga para confirmar que los registros fueron importados correctamente.
 
-## 5. Ejecutar las consultas de verificación
+### 5. Ejecutar las consultas de verificación
 
 Una vez cargadas todas las tablas:
 
