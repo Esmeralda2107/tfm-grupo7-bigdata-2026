@@ -25,7 +25,7 @@ def find_repo_root(start_path: Path) -> Path:
 
 BASE_DIR = find_repo_root(APP_DIR)
 CSV_PATH = BASE_DIR / "datos" / "maestro" / "MASTER_DATASET_MANHATTAN_ML.csv"
-CLUSTER_PATH = BASE_DIR / "resultados" / "04_clustering" / "Ward.D" / "manhattan_Ward_k4.xlsx"
+CLUSTER_PATH = BASE_DIR / "resultados" / "04_clustering" / "K-Means" / "Dataset_KMeans_K4_Final.xlsx"
 MICRO_PATH = BASE_DIR / "resultados" / "05_scoring" / "scoring_micro.csv"
 MACRO_PATH = BASE_DIR / "resultados" / "05_scoring" / "scoring_macro.csv"
 CONSOLIDADO_PATH = BASE_DIR / "resultados" / "06_escenarios" / "consolidado_escenarios.csv"
@@ -137,8 +137,8 @@ DIMENSIONS = {
         "label": "Censo (Demanda)",
         "variables": {
             "POBLACION_KM2": {"label": "Población por km²", "weight": 30, "sense": "direct"},
-            "PORCENTAJE_HISPANOS": {"label": "Porcentaje hispanos", "weight": 20, "sense": "direct"},
-            "EDAD_MEDIANA": {"label": "Edad mediana", "weight": 10, "sense": "direct"},
+            "PORCENTAJE_HISPANOS": {"label": "Porcentaje hispanos", "weight": 15, "sense": "direct"},
+            "EDAD_MEDIANA": {"label": "Edad mediana", "weight": 15, "sense": "direct"},
             "INGRESO_MEDIANO_HOGAR": {"label": "Ingreso mediano del hogar", "weight": 25, "sense": "direct"},
             "TAMANO_HOGAR_PROMEDIO": {"label": "Tamaño hogar promedio", "weight": 15, "sense": "direct"},
         },
@@ -146,8 +146,8 @@ DIMENSIONS = {
     "MOVILIDAD": {
         "label": "Movilidad",
         "variables": {
-            "MOVILIDAD_PROMEDIO_DIARIA": {"label": "Movilidad promedio diaria", "weight": 80, "sense": "direct"},
-            "MOV_CANTIDAD_ESTACIONES": {"label": "Cantidad de estaciones", "weight": 20, "sense": "direct"},
+            "MOVILIDAD_PROMEDIO_DIARIA": {"label": "Movilidad promedio diaria", "weight": 75, "sense": "direct"},
+            "MOV_CANTIDAD_ESTACIONES": {"label": "Cantidad de estaciones", "weight": 25, "sense": "direct"},
         },
     },
     "SEGURIDAD": {
@@ -761,7 +761,7 @@ def dimension_summary_line(row, dim_key):
 
 
 def get_filter_defaults(scenario_scored, all_clusters=None):
-    return {
+    defaults = {
         "filter_score_range": (
             float(scenario_scored["SCORE_ESCENARIO"].min()),
             float(scenario_scored["SCORE_ESCENARIO"].max()),
@@ -780,6 +780,9 @@ def get_filter_defaults(scenario_scored, all_clusters=None):
         ),
         "filter_zones": sorted(scenario_scored["NOMBRE_ZONA"].dropna().unique().tolist()),
     }
+    if all_clusters is not None:
+        defaults["filter_clusters"] = sorted(all_clusters)
+    return defaults
 
 
 def reset_filters_callback(defaults):
@@ -886,7 +889,7 @@ main_defaults = {d: scenario["weights"][d] for d in main_dims}
 main_weights_key = f"main_weights_{scenario_name}"
 initialize_weight_state(main_weights_key, main_defaults)
 
-main_min = 16
+main_min = 15
 main_max = 60
 
 main_selected = st.sidebar.selectbox(
@@ -1409,7 +1412,7 @@ En dimensiones de sentido inverso, una puntuación alta indica una condición re
 - Coste
 
 **Fuente del clustering mostrada en la app**
-- La aplicación utiliza la solución de clusterización final seleccionada en el repositorio: **Ward.D con k = 4**.
+- La aplicación utiliza la solución de clusterización final seleccionada en el repositorio: **K-Means con k = 4**.
 """
     )
 
@@ -1502,7 +1505,7 @@ with tab5:
 - El modelo simplifica la realidad y se basa en variables proxy según la disponibilidad de datos.
 - Los resultados son relativos al conjunto de zonas analizadas, por lo que un score alto no implica una condición óptima absoluta.
 - La recomendación depende de los pesos asignados en cada escenario, por lo que el ranking puede variar.
-- La segmentación territorial utilizada en la aplicación corresponde específicamente a la solución **Ward.D con k = 4** seleccionada en el proyecto.
+- La segmentación territorial utilizada en la aplicación corresponde específicamente a la solución **K-Means con k = 4** seleccionada en el proyecto.
 - El modelo depende de la calidad, actualización y homogeneidad de las fuentes utilizadas.
 - No incorpora factores cualitativos y operativos clave, por lo que no sustituye la validación en campo.
 - La recomendación obtenida no garantiza el éxito comercial del negocio.
