@@ -1,6 +1,6 @@
 # 🗂️ Datos Limpios
 
-Este directorio reúne las **fuentes en su versión limpia**, resultado del primer procesamiento aplicado sobre los datos originales del proyecto, con el objetivo de convertir los datasets en una forma más estructurada, legible y preparada para su uso posterior.
+Este directorio reúne las **fuentes en su versión limpia**, resultado del primer procesamiento aplicado sobre los datos originales del proyecto con el objetivo de transformar los datasets en una forma más estructurada, legible y preparada para su uso posterior.
 
 Las bases limpias se organizan por dimensión temática:
 
