@@ -12,4 +12,3 @@ En esta carpeta se incluyen los siguientes archivos:
 
 Estas visualizaciones presentan, de forma sintética, indicadores clave como **cluster**, **score medio**, **ranking global**, **consistencia**, **accesibilidad**, **área**, **movilidad**, **competencia**, **coste**, **dinamismo comercial**, **presencia de clientes**, **entorno mixto** y **seguridad operativa**, permitiendo comparar el desempeño relativo de cada zona desde una perspectiva territorial y estratégica.
 
-Este anexo complementa la sección de **resultados del modelo de localización** desarrollada en el documento principal del TFM, aportando una representación gráfica de la zona recomendada y de las dos alternativas más relevantes dentro de la priorización final.
