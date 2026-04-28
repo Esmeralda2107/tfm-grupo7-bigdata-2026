@@ -1,6 +1,6 @@
 # TFM Grupo 7 Big Data 2026
 
-Repositorio técnico del proyecto de **Location Intelligence** desarrollado para el análisis territorial de Manhattan y la priorización de zonas para apertura de negocio.
+Repositorio técnico del **Trabajo de Fin de Máster del Grupo 7** del Máster en **Big Data & Business Intelligence**, orientado al desarrollo de un **sistema de Location Intelligence** para el análisis territorial de Manhattan.
 
 Este repositorio reúne los datos, notebooks, scripts, resultados, documentación complementaria y la aplicación interactiva necesarios para reproducir el flujo principal del proyecto, desde las fuentes originales hasta la visualización final de resultados.
 
