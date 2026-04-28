@@ -2,7 +2,7 @@
 
 Este documento presenta la guía funcional del **dashboard interactivo desarrollado en Streamlit** como capa de visualización y exploración del modelo de localización construido en el proyecto.
 
-La aplicación permite consultar de forma dinámica los resultados del análisis territorial, facilitando la comparación entre zonas de Manhattan y la interpretación de la recomendación final de localización para DonTaquirou. Su papel dentro del proyecto no es sustituir el modelo analítico, sino **hacerlo explorable, interpretable y utilizable como herramienta de apoyo a la decisión**. En el TFM, la visualización interactiva aparece como parte de los objetivos específicos del proyecto y Streamlit se incorpora explícitamente como la herramienta utilizada para mostrar y explorar de forma dinámica los resultados del modelo. :contentReference[oaicite:0]{index=0}
+La aplicación permite consultar de forma dinámica los resultados del análisis territorial, facilitando la comparación entre zonas de Manhattan y la interpretación de la recomendación final de localización para DonTaquirou. Su papel dentro del proyecto no es sustituir el modelo analítico, sino **hacerlo explorable, interpretable y utilizable como herramienta de apoyo a la decisión**. En el TFM, la visualización interactiva aparece como parte de los objetivos específicos del proyecto y Streamlit se incorpora explícitamente como la herramienta utilizada para mostrar y explorar de forma dinámica los resultados del modelo. 
 
 ## 1. Finalidad de la aplicación
 
