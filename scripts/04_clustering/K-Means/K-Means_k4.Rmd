@@ -1,0 +1,623 @@
+---
+title: "Clusterización K-Means"
+author: "Grupo 7"
+date: "2026"
+output:
+  html_document:
+    df_print: paged
+    toc: TRUE
+    toc_depth: 3
+    number_sections: TRUE
+    toc_float:
+      collapsed: TRUE
+      smooth_scroll: TRUE
+    theme: united
+    highlight: tango
+    code_folding: show
+    fig_caption: TRUE
+    keep_md: FALSE
+---
+
+# Librerías
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(factoextra)
+library(cluster)
+library(knitr)
+library(kableExtra)
+library(fmsb)
+library(viridis)
+library(viridisLite) 
+library(plotly)
+library(ggdendro)
+library(FactoMineR)
+library(sf)
+library(writexl)
+library(here)
+```
+
+
+# Carga de datos
+
+
+```{r}
+ruta_dataset_zscore <- here("datos", "maestro", "MASTER_DATASET_MANHATTAN_ZSCORE.csv")
+ruta_geojson <- here("datos", "crudos", "zonas", "2020_Neighborhood_Tabulation_Areas_(NTAs)_20260118.geojson")
+ruta_salida_kmeans <- here("resultados", "04_clustering", "K-Means", "Dataset_KMeans_K4_Final.xlsx")
+
+datos <- read.csv(ruta_dataset_zscore)
+manhattan_numeric <- datos %>% select(where(is.numeric)) %>% select(-AREA_KM2)
+
+rownames(manhattan_numeric) <- datos$NOMBRE_ZONA
+```
+
+
+# Prueba de Codo WSS
+
+```{r}
+wss <- numeric(10)
+
+for (i in 1:10) {
+  modelo_temp <- kmeans(manhattan_numeric, centers = i, nstart = 25)
+  wss[i] <- modelo_temp$tot.withinss
+}
+
+plot(1:10, wss, type = "b",
+     xlab = "Número de clusters",
+     ylab = "InerciaIC",
+     main = "Método del codo")
+```
+
+# Prueba Silhouette
+
+
+```{r}
+set.seed(123)
+fviz_nbclust(manhattan_numeric, kmeans, method = "silhouette",k.max = 10)
+```
+
+# Ejecución de Modelo K=3
+
+```{r}
+set.seed(123)
+k_optimo <- 3
+modelo_final <- kmeans(manhattan_numeric, centers = k_optimo, nstart = 25)
+modelo_final
+```
+
+```{r}
+modelo_final$centers
+```
+
+```{r}
+modelo_final$cluster
+```
+
+## Tabla con zonas y clusters asignados
+
+
+```{r}
+zonas_asignadas <- data.frame(
+  Zona = datos$NOMBRE_ZONA,
+  Cluster = paste0("Cluster ", modelo_final$cluster)
+)
+
+tabla_columnas <- zonas_asignadas %>%
+  group_by(Cluster) %>%
+  mutate(row_id = row_number()) %>%
+  pivot_wider(names_from = Cluster, values_from = Zona) %>%
+  select(-row_id) 
+
+tabla_columnas <- tabla_columnas[, order(names(tabla_columnas))]
+tabla_columnas
+```
+
+
+## Prueba de Silhouette sobre el Modelo Final
+
+```{r}
+fviz_silhouette(silhouette(modelo_final$cluster, dist(manhattan_numeric)), main="SILHOUETTE - 3 CLUSTERS")
+```
+
+## Gráfico de visualización 
+
+```{r}
+clusplot(manhattan_numeric, 
+         modelo_final$cluster, 
+         color=TRUE, 
+         shade=TRUE, 
+         labels=1,
+         lines=0, 
+         main="CLUSTERING PLOT - MANHATTAN (k=3)")
+```
+
+## Centroides
+
+Cluster 1
+
+```{r}
+grupos <- modelo_final$cluster
+centros.gravedad <- modelo_final$centers
+
+centro.cluster1 <- centros.gravedad[1,]
+centro.cluster1 <- data.frame("cluster" = "C1", "variable" = names(centro.cluster1),
+                              "valor" = centros.gravedad[1,])
+centro.cluster1
+```
+
+Cluster 2
+
+```{r}
+centro.cluster2 <- centros.gravedad[2,]
+centro.cluster2 <- data.frame("cluster" = "C2", "variable" = names(centro.cluster2),
+                              "valor" = centros.gravedad[2,])
+centro.cluster2
+```
+
+Cluster 3
+
+```{r}
+centro.cluster3 <- centros.gravedad[3,]
+centro.cluster3 <- data.frame("cluster" = "C3", "variable" = names(centro.cluster3),
+                              "valor" = centros.gravedad[3,])
+centro.cluster3
+```
+
+## Importancia de las Variables por cluster
+
+```{r}
+centros <- rbind(centro.cluster1, centro.cluster2, centro.cluster3)
+for (x in unique(centros$variable)) {
+  aux <- centros[centros$variable == x, "valor"]
+  aux <- aux - min(aux)
+  aux <- aux / max(aux)
+  centros[centros$variable == x, "valor"] <- aux
+}
+centros
+```
+
+```{r}
+ggplot(centros[centros$cluster == "C1", ], aes(x = variable, y = valor)) + 
+  geom_bar(stat = "identity", fill = "red") + # Color fijo
+  labs(x = "Variables", y = "Cluster 1") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  coord_flip()
+```
+
+```{r}
+ggplot(centros[centros$cluster == "C2", ], aes(x = variable, y = valor)) + 
+  geom_bar(stat = "identity", fill = "darkgreen") + # Color fijo
+  labs(x = "Variables", y = "Cluster 2") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  coord_flip()
+```
+
+```{r}
+ggplot(centros[centros$cluster == "C3", ], aes(x = variable, y = valor)) + 
+  geom_bar(stat = "identity", fill = "blue") + # Color fijo
+  labs(x = "Variables", y = "Cluster 3") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  coord_flip()
+```
+
+## Visualización de los centroides
+
+```{r}
+ggplot(data = centros[order(centros$variable), ],
+       aes(x = variable, y = valor, group = cluster)) + 
+  geom_point(aes(colour = cluster)) +
+  geom_polygon(aes(colour = cluster, fill = cluster), alpha = 0.2) +
+  ylim(-0.1, 1) + labs(x = "", y = "") + theme_minimal() +
+  theme(axis.ticks.y = element_blank(), axis.text.y = element_blank()) +
+  annotate('text', x = 0, y = c(0, 0.25, 0.5, 0.75, 1),
+           label = c("0%", "25%", "50%", "75%", "100%"), color = "darkgray") +
+  coord_polar()
+```
+
+## Interpretación de Cluster K=3
+
+En este modelo, Manhattan se divide en tres perfiles que separan claramente la intensidad de uso de suelo y el perfil residencial.
+
+```{r}
+interpretar_barrios <- function(num_cluster, df_asignadas) {
+  df_asignadas %>%
+    filter(Cluster == paste0("Cluster ", num_cluster)) %>%
+    pull(Zona) %>%
+    paste(collapse = ", ")
+}
+```
+
+
+**Clúster 1: Centro Residencial y Diverso de Manhattan**
+
+El Cluster 1 representa la vida comunitaria y residencial del Alto Manhattan y el East Side. Geográficamente, este grupo dibuja un arco que nace en el Lower East Side y asciende con fuerza hacia el norte, consolidándose en barrios emblemáticos como Harlem, Washington Heights e Inwood. A diferencia de los centros financieros de la isla, este cluster se define por ser el "motor humano" de la ciudad, donde la importancia máxima de la tasa de ocupación y el tamaño del hogar refleja una estructura social de familias arraigadas y viviendas que operan a su máxima capacidad, caracterizandose por ser barrios tradicionales.
+
+Desde la perspectiva de la composición demográfica, la variable Porcentaje de Hispanos es un factor determinante absoluto para la pertenencia a este grupo. En contraste, el modelo asigna una importancia nula a variables económicas y de mercado como el Ingreso Mediano del Hogar, el Precio de Alquiler por Pie Cuadrado y la Edad Mediana. Esto indica que el cluster no se segmenta por niveles de riqueza o etapas de vida, sino por su composición étnica y su configuración de alta densidad poblacional y residencial.
+
+En cuanto a la actividad económica y de infraestructura, el cluster muestra una nula relevancia en la presencia de Oficinas, Comercio y Movilidad Diaria (estaciones y flujo), lo que lo define técnicamente como un área de uso de suelo predominantemente residencial. El único indicador de riesgo con peso significativo es Delito_Otros_KM2 (aprox. 0.82), mientras que los delitos de propiedad y transporte no son variables explicativas para este grupo. Asimismo, la Competencia Directa e Indirecta registra valores cercanos a cero, confirmando una baja densidad de establecimientos comerciales en comparación con la densidad de residentes.
+
+En resumen, el perfil técnico del Cluster 1 es el de un entorno urbano densamente poblado y de uso residencial intensivo, con una base demográfica predominantemente hispana y estructuras familiares extensas. Su caracterización estadística es independiente de las fluctuaciones del mercado inmobiliario (precios de alquiler) o de los nodos de actividad corporativa (oficinas y movilidad), situándose como un segmento definido por variables de volumen poblacional y tipología habitacional.
+
+
+```{r}
+interpretar_barrios(1, zonas_asignadas)
+```
+
+**Clúster 2: Alta Intensidad Comercial y Movilidad**
+
+El Cluster 2 representa el núcleo comercial y de servicios de Manhattan. Geográficamente, este grupo se concentra en el epicentro de la isla, abarcando sectores críticos como Midtown South-Flatiron, Union Square, y Midtown-Times Square. A diferencia de las zonas predominantemente residenciales, este cluster se define por ser el motor económico y de movilidad de la ciudad, donde la importancia máxima de la infraestructura de transporte y la actividad comercial refleja un entorno de altísima intensidad funcional y flujo constante de población flotante.
+
+Desde la perspectiva de la composición demográfica y económica, el Ingreso Mediano del Hogar es un factor determinante, posicionando a este grupo en un estrato económico elevado. Sin embargo, el modelo asigna una importancia nula a variables de estructura familiar como el Tamaño del Hogar, la Tasa de Ocupación o el Porcentaje de Hispanos. Esto indica que el cluster no se segmenta por la composición del núcleo familiar o identidad étnica, sino por su perfil de riqueza y un uso del suelo donde la vivienda es secundaria frente a la actividad profesional y comercial. La Edad Mediana y el Precio de Alquiler actúan como variables complementarias que refuerzan un perfil de residentes adultos con alto poder adquisitivo.
+
+En cuanto a la actividad económica y de infraestructura, el cluster muestra una relevancia máxima en Movilidad Diaria (flujo y estaciones) y Lugares de Comercio por $km^{2}$. Técnicamente, esto lo define como el nodo de mayor accesibilidad y oferta comercial de la ciudad. Asimismo, presenta los niveles más altos de Competencia Directa e Indirecta, lo que sugiere un mercado saturado y altamente competitivo. No obstante, es notable que los Lugares de Oficinas tienen una importancia menor en la definición del cluster, lo que destaca que su identidad estadística está más ligada al consumo y al tránsito que a la administración corporativa pura.
+
+Finalmente, el perfil de seguridad es una variable crítica de diferenciación. A diferencia de otros sectores, este cluster registra una importancia máxima en todas las categorías de criminalidad analizadas: Delitos de Transporte, Propiedad y Otros. Esto es un indicador técnico vinculado a la altísima exposición, el flujo masivo de personas y la densidad de activos comerciales. En resumen, el perfil técnico del Cluster 2 es el de un ecosistema urbano de alta gama, comercialmente saturado y con máxima conectividad, definido por su capacidad de consumo y su complejidad operativa, alejándose totalmente de la dinámica residencial tradicional.
+
+
+```{r}
+interpretar_barrios(2, zonas_asignadas)
+```
+
+**Clúster 3: Residencial-Corporativo de Alto Valor Inmobiliario**
+
+El Cluster 3 representa el perfil de alta exclusividad y especialización profesional del "Manhattan Corporativo y de Lujo". Geográficamente, este grupo abarca una franja de alto valor que se extiende desde el Financial District y Tribeca, subiendo por el West Side y Chelsea, hasta consolidarse en el Upper East Side y Upper West Side. A diferencia de los clusters anteriores, este grupo se define por una combinación de densidad poblacional y un entorno económico de élite, donde la importancia máxima de los precios inmobiliarios y la infraestructura corporativa refleja un estilo de vida de alto estatus y un uso del suelo de carácter mixto-premium.
+
+Desde la perspectiva de la composición demográfica y económica, la Edad Mediana, el Ingreso Mediano del Hogar y el Alquiler por Pie Cuadrado son los factores determinantes. Esto posiciona a este grupo como el segmento de mayor madurez demográfica y poder adquisitivo de la ciudad. En contraste, el modelo asigna una importancia mínima al Porcentaje de Hispanos y valores moderadamente bajos a la Tasa de Ocupación y Tamaño del Hogar. Esto indica que el cluster se caracteriza por hogares más pequeños, posiblemente de profesionales independientes o parejas, con una homogeneidad étnica y económica muy marcada que lo distancia de la dinámica multicultural del Cluster 1.
+
+En cuanto a la actividad económica y de infraestructura, el cluster muestra una relevancia máxima en Lugares de Oficinas por $km^{2}$ y Población por $km^{2}$ ($1.0$). Técnicamente, esta combinación define un entorno único de "densidad de élite": zonas donde el espacio está saturado tanto por residentes de altos ingresos como por sedes corporativas de prestigio. Es notable que, a pesar de esta densidad, la Competencia Directa e Indirecta y los Lugares de Comercio presentan valores bajos, lo que sugiere un entorno comercial más exclusivo, boutique o de servicios especializados, en lugar de la saturación de consumo masivo que define al Cluster 2 (Midtown).
+
+Finalmente, el perfil de seguridad en este cluster muestra una importancia baja en delitos de propiedad y otros delitos, con una relevancia moderada en Delitos de Transporte. Esto sugiere un entorno de seguridad más controlado o con menor exposición al crimen callejero masivo. En resumen, el perfil técnico del Cluster 3 es el de un enclave socioeconómico de alto rendimiento, definido por la coexistencia de un mercado inmobiliario de lujo y un ecosistema de oficinas de alto nivel, consolidándose como el sector más exclusivo y profesionalmente denso de Manhattan.
+
+
+```{r}
+interpretar_barrios(3, zonas_asignadas)
+```
+
+## Mapa Manhattan K=3
+
+```{r}
+resumen_k3 <- data.frame(
+  Zona = datos$NOMBRE_ZONA,
+  Cluster = as.character(modelo_final$cluster)
+)
+
+resumen_k3 <- resumen_k3 %>% mutate(Zona = gsub("^Chinatown$", "Chinatown-Two Bridges", Zona))
+
+nyc_map <- st_read(ruta_geojson, quiet = TRUE)
+manhattan_map <- nyc_map %>% filter(boroname == "Manhattan")
+
+mapa_final <- manhattan_map %>%
+  left_join(resumen_k3, by = c("ntaname" = "Zona"))
+
+ggplot(data = mapa_final) +
+  geom_sf(aes(fill = as.factor(Cluster)), color = "white", size = 0.1) +
+  scale_fill_manual(
+    values = c("1" = "#440154FF", "2" = "#21908CFF", "3" = "#FDE725FF"),
+    name = "Cluster",
+    na.value = "#D3D3D3",
+    labels = c("C1","C2", "C3", "Sin Datos")
+  ) +
+  labs(
+    title = "Distribución Espacial (K=3)",
+    subtitle = "Zonas según perfil socio-urbano básico",
+    caption = "Gris: Zonas sin datos (ej. Central Park)"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "darkslategrey"),
+    legend.position = "right"
+  )
+```
+
+```{r}
+mapa_final<- manhattan_map %>%
+  left_join(resumen_k3, by = c("ntaname" = "Zona")) %>%
+  mutate(texto_hover = paste0("<b>Zona:</b> ", ntaname, 
+                              "<br><b>Cluster:</b> ", ifelse(is.na(Cluster), "Sin Datos", Cluster)))
+p3 <- ggplot(data = mapa_final) +
+  geom_sf(aes(fill = as.factor(Cluster), text = texto_hover), color = "white", size = 0.1) +
+  scale_fill_viridis_d(option = "viridis", name = "Cluster", na.value = "#D3D3D3") +
+  theme_void() +
+  labs(title = "Mapa Interactivo de Clústeres (K=3)")
+
+ggplotly(p3, tooltip = "text") %>%
+  layout(title = list(text = "Mapa Interactivo de Clústeres de Manhattan (K=3)", x = 0.5))
+```
+
+
+
+# Ejecución de Modelo K=4
+
+```{r}
+set.seed(123)
+k_optimo <- 4
+modelo_final <- kmeans(manhattan_numeric, centers = k_optimo, nstart = 25)
+modelo_final
+```
+
+```{r}
+modelo_final$centers
+```
+
+```{r}
+modelo_final$cluster
+```
+
+## Tabla con zonas y clusters asignados
+
+
+```{r}
+zonas_asignadas <- data.frame(
+  Zona = datos$NOMBRE_ZONA,
+  Cluster = paste0("Cluster ", modelo_final$cluster)
+)
+
+tabla_columnas <- zonas_asignadas %>%
+  group_by(Cluster) %>%
+  mutate(row_id = row_number()) %>%
+  pivot_wider(names_from = Cluster, values_from = Zona) %>%
+  select(-row_id) 
+
+tabla_columnas <- tabla_columnas[, order(names(tabla_columnas))]
+tabla_columnas
+```
+
+
+## Prueba de Silhouette sobre el Modelo Final
+
+```{r}
+fviz_silhouette(silhouette(modelo_final$cluster, dist(manhattan_numeric)), main="SILHOUETTE - 4 CLUSTERS")
+```
+
+## Gráfico de visualización 
+
+```{r}
+clusplot(manhattan_numeric, 
+         modelo_final$cluster, 
+         color=TRUE, 
+         shade=TRUE, 
+         labels=1,
+         lines=0, 
+         main="CLUSTERING PLOT - MANHATTAN (k=4)")
+```
+
+## Centroides
+
+Cluster 1
+
+```{r}
+grupos <- modelo_final$cluster
+centros.gravedad <- modelo_final$centers
+
+centro.cluster1 <- centros.gravedad[1,]
+centro.cluster1 <- data.frame("cluster" = "C1", "variable" = names(centro.cluster1),
+                              "valor" = centros.gravedad[1,])
+centro.cluster1
+```
+
+Cluster 2
+
+```{r}
+centro.cluster2 <- centros.gravedad[2,]
+centro.cluster2 <- data.frame("cluster" = "C2", "variable" = names(centro.cluster2),
+                              "valor" = centros.gravedad[2,])
+centro.cluster2
+```
+
+Cluster 3
+
+```{r}
+centro.cluster3 <- centros.gravedad[3,]
+centro.cluster3 <- data.frame("cluster" = "C3", "variable" = names(centro.cluster3),
+                              "valor" = centros.gravedad[3,])
+centro.cluster3
+```
+
+
+Cluster 4
+
+```{r}
+centro.cluster4 <- centros.gravedad[4,]
+centro.cluster4 <- data.frame("cluster" = "C4", "variable" = names(centro.cluster4),
+                              "valor" = centros.gravedad[4,])
+centro.cluster4
+```
+
+
+## Importancia de las Variables por cluster
+
+```{r}
+centros <- rbind(centro.cluster1, centro.cluster2, centro.cluster3, centro.cluster4)
+for (x in unique(centros$variable)) {
+  aux <- centros[centros$variable == x, "valor"]
+  aux <- aux - min(aux)
+  aux <- aux / max(aux)
+  centros[centros$variable == x, "valor"] <- aux
+}
+centros
+```
+
+```{r}
+ggplot(centros[centros$cluster == "C1", ], aes(x = variable, y = valor)) + 
+  geom_bar(stat = "identity", fill = "purple") + # Color fijo
+  labs(x = "Variables", y = "Cluster 2") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  coord_flip()
+```
+
+```{r}
+ggplot(centros[centros$cluster == "C2", ], aes(x = variable, y = valor)) + 
+  geom_bar(stat = "identity", fill = "red") + # Color fijo
+  labs(x = "Variables", y = "Cluster 3") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  coord_flip()
+```
+
+```{r}
+ggplot(centros[centros$cluster == "C3", ], aes(x = variable, y = valor)) + 
+  geom_bar(stat = "identity", fill = "darkgreen") + # Color fijo
+  labs(x = "Variables", y = "Cluster 4") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  coord_flip()
+```
+
+```{r}
+ggplot(centros[centros$cluster == "C4", ], aes(x = variable, y = valor)) + 
+  geom_bar(stat = "identity", fill = "blue") + # Color fijo
+  labs(x = "Variables", y = "Cluster 1") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  coord_flip()
+```
+
+## Visualización de los centroides
+
+```{r}
+ggplot(data = centros[order(centros$variable), ],
+       aes(x = variable, y = valor, group = cluster)) + 
+  geom_point(aes(colour = cluster)) +
+  geom_polygon(aes(colour = cluster, fill = cluster), alpha = 0.2) +
+  ylim(-0.1, 1) + labs(x = "", y = "") + theme_minimal() +
+  theme(axis.ticks.y = element_blank(), axis.text.y = element_blank()) +
+  annotate('text', x = 0, y = c(0, 0.25, 0.5, 0.75, 1),
+           label = c("0%", "25%", "50%", "75%", "100%"), color = "darkgray") +
+  coord_polar()
+```
+
+## Interpretación de Cluster K=4
+
+Al forzar cuatro grupos, K-Means separa nichos específicos que en k=3 quedaban "ocultos" por la media de los grupos más grandes.
+
+
+```{r}
+interpretar_barrios <- function(num_cluster, df_asignadas) {
+  df_asignadas %>%
+    filter(Cluster == paste0("Cluster ", num_cluster)) %>%
+    pull(Zona) %>%
+    paste(collapse = ", ")
+}
+```
+
+
+**Clúster 1: Centro Residencial y Diverso de Manhattan**
+
+Este nuevo Cluster 1 representa el núcleo de alta densidad residencial y cohesión demográfica del Norte de Manhattan y sectores específicos del East Side. Geográficamente, el grupo se concentra en barrios de fuerte identidad histórica como Harlem, Washington Heights e Inwood, extendiéndose hacia el sur hasta el Lower East Side. A diferencia de otras zonas de la isla, este cluster se caracteriza por una estructura de vivienda intensiva, donde la importancia máxima de la ocupación y la composición del hogar refleja un entorno de familias numerosas y una vida comunitaria profundamente arraigada.
+
+Desde la perspectiva de la composición demográfica y social, las variables Porcentaje de Hispanos, Tamaño de Hogar Promedio y Tasa de Ocupación presentan una importancia absoluta. Esto define técnicamente al cluster como un área con una base étnica homogénea y una alta densidad de habitantes por unidad de vivienda. En contraste, el modelo asigna una importancia nula al Ingreso Mediano del Hogar y al Alquiler por Pie Cuadrado, lo que indica que el factor económico no es el motor que agrupa a estos barrios, sino sus características sociales y de convivencia. La Edad Mediana sugiere una población relativamente joven en comparación con otros sectores.
+
+En cuanto a la actividad económica y el entorno físico, el cluster muestra una alta relevancia en Lugares Residenciales por $km^{2}$ (aprox. $0.88$) y Población por $km^{2}$ (aprox. $0.62$). Técnicamente, esto lo clasifica como un territorio de uso de suelo eminentemente doméstico. Es notable la nula importancia de Lugares de Oficinas e Ingresos, y una presencia marginal de Comercio, lo que describe una economía de barrio que no depende de grandes centros corporativos. La variable de Competencia Directa (aprox. $0.45$) indica un nivel moderado de actividad comercial local que sirve a la densa población residente.
+
+Finalmente, el perfil de seguridad se destaca por una importancia máxima ($1.0$) en la variable Delito_Otros_KM2, mientras que los delitos vinculados a la propiedad y al transporte registran valores mínimos o nulos. Esto sugiere un entorno donde la densidad poblacional se traduce en una mayor frecuencia de incidentes generales, pero con baja incidencia en delitos económicos o de tránsito masivo. En resumen, el perfil técnico de este Cluster 1 es el de un ecosistema residencial densamente poblado y joven, definido por su composición cultural hispana y su carácter doméstico intensivo, operando fuera de los circuitos financieros y corporativos de la ciudad.
+
+
+```{r}
+interpretar_barrios(1, zonas_asignadas)
+```
+
+**Clúster 2: Alta Intensidad Comercial y Movilidad**
+
+
+El Cluster 2 representa el núcleo comercial y de servicios de Manhattan. Geográficamente, este grupo se concentra en el epicentro de la isla, abarcando sectores críticos como Midtown South-Flatiron, Union Square, y Midtown-Times Square. A diferencia de las zonas predominantemente residenciales, este cluster se define por ser el motor económico y de movilidad de la ciudad, donde la importancia máxima de la infraestructura de transporte y la actividad comercial refleja un entorno de altísima intensidad funcional y flujo constante de población flotante.
+
+Desde la perspectiva de la composición demográfica y económica, el Ingreso Mediano del Hogar es un factor determinante, posicionando a este grupo en un estrato económico elevado. Sin embargo, el modelo asigna una importancia nula a variables de estructura familiar como el Tamaño del Hogar, la Tasa de Ocupación o el Porcentaje de Hispanos. Esto indica que el cluster no se segmenta por la composición del núcleo familiar o identidad étnica, sino por su perfil de riqueza y un uso del suelo donde la vivienda es secundaria frente a la actividad profesional y comercial. La Edad Mediana y el Precio de Alquiler actúan como variables complementarias que refuerzan un perfil de residentes adultos con alto poder adquisitivo.
+
+En cuanto a la actividad económica y de infraestructura, el cluster muestra una relevancia máxima en Movilidad Diaria (flujo y estaciones) y Lugares de Comercio por $km^{2}$. Técnicamente, esto lo define como el nodo de mayor accesibilidad y oferta comercial de la ciudad. Asimismo, presenta los niveles más altos de Competencia Directa e Indirecta, lo que sugiere un mercado saturado y altamente competitivo. No obstante, es notable que los Lugares de Oficinas tienen una importancia menor en la definición del cluster, lo que destaca que su identidad estadística está más ligada al consumo y al tránsito que a la administración corporativa pura.
+
+Finalmente, el perfil de seguridad es una variable crítica de diferenciación. A diferencia de otros sectores, este cluster registra una importancia máxima en todas las categorías de criminalidad analizadas: Delitos de Transporte, Propiedad y Otros. Esto es un indicador técnico vinculado a la altísima exposición, el flujo masivo de personas y la densidad de activos comerciales. En resumen, el perfil técnico del Cluster 2 es el de un ecosistema urbano de alta gama, comercialmente saturado y con máxima conectividad, definido por su capacidad de consumo y su complejidad operativa, alejándose totalmente de la dinámica residencial tradicional.
+
+```{r}
+interpretar_barrios(2, zonas_asignadas)
+```
+
+**Clúster 3: Residencia Premium y Densidad Consolidada **
+
+El Cluster 3 representa el perfil de residencial de élite y alta densidad de Manhattan. Geográficamente, este grupo se concentra en los sectores más prestigiosos y consolidados de la isla, abarcando la totalidad del Upper East Side, el Upper West Side y enclaves residenciales como Stuyvesant Town. A diferencia de otros clusters, este grupo se define por una combinación de madurez demográfica y un mercado inmobiliario de máxima categoría, donde la vivienda de alto valor convive con una saturación poblacional extrema, pero bajo un entorno puramente residencial.
+
+Desde la perspectiva de la composición demográfica y económica, la Edad Mediana, el Alquiler por Pie Cuadrado y el Ingreso Mediano del Hogar son los factores determinantes (con pesos de $1.0$ o muy cercanos). Esto posiciona estadísticamente a este grupo como el segmento de mayor estabilidad económica y edad avanzada de la muestra. En contraste, el modelo asigna una importancia mínima al Porcentaje de Hispanos, lo que indica una baja diversidad étnica en comparación con los sectores del norte. Asimismo, la Tasa de Ocupación y el Tamaño del Hogar muestran valores moderados (aprox. $0.45$), sugiriendo una estructura familiar más pequeña o de nidos vacíos, típica de zonas de alto poder adquisitivo.
+
+En cuanto a la actividad económica y el entorno urbano, el cluster presenta una relevancia máxima ($1.0$) en Población por $km^{2}$ y Lugares Residenciales por $km^{2}$. Técnicamente, esto lo define como un entorno de "compactación residencial": zonas donde el espacio está totalmente destinado a la vivienda de alta densidad pero de alta gama. Es notable la baja importancia de Oficinas, Comercio, Movilidad y Competencia, lo que describe áreas que, a pesar de estar densamente pobladas, funcionan como "barrios dormitorio de lujo" que dependen de otros núcleos (como Midtown) para la actividad laboral y el consumo masivo.
+
+Finalmente, el perfil de seguridad se caracteriza por una nula o bajísima relevancia de todas las categorías de delito analizadas. Esto indica que el cluster se sitúa en entornos de alta percepción de seguridad y baja incidencia criminal estadística. En resumen, el perfil técnico del Cluster 3 es el de un enclave residencial de alta densidad y máximo valor inmobiliario, definido por una población madura y afluente, donde el uso del suelo está estrictamente preservado para la vivienda, manteniéndose al margen de la saturación comercial y los nodos de transporte masivo.
+
+
+```{r}
+interpretar_barrios(3, zonas_asignadas)
+```
+
+**Clúster 4: Administrativo de Alta Renta y Densidad Corporativa **
+
+El Cluster 4 representa el perfil del ecosistema corporativo y de servicios profesionales de Manhattan. Geográficamente, este grupo abarca los distritos de negocios y áreas de uso mixto más dinámicas del Downtown y el Mid-Manhattan, incluyendo el Financial District, Tribeca, SoHo, Chelsea y zonas de East Midtown. A diferencia de los enclaves puramente residenciales, este cluster se define por ser el centro de operaciones administrativas y laborales de la ciudad, donde la importancia máxima de la infraestructura de oficinas refleja un entorno diseñado para la productividad y el intercambio económico de alto nivel.
+
+Desde la perspectiva de la composición demográfica y económica, el Ingreso Mediano del Hogar y el Alquiler por Pie Cuadrado son los factores determinantes más altos (entre $0.70$ y $0.80$). Esto posiciona a este grupo en un estrato económico superior, habitado por una población con alto poder adquisitivo. En contraste, el modelo asigna una importancia nula ($0$) a la Edad Mediana y valores mínimos al Porcentaje de Hispanos, lo que indica que el cluster no se segmenta por etapas generacionales o identidad étnica, sino por su función económica. La Tasa de Ocupación y la Población por $km^{2}$ muestran pesos moderados (aprox. $0.45$), sugiriendo un equilibrio entre residentes y el uso comercial/profesional del espacio.
+
+En cuanto a la actividad económica y el entorno urbano, la variable Lugares de Oficinas por $km^{2}$ es el factor determinante absoluto ($1.0$). Técnicamente, esto clasifica al cluster como el núcleo administrativo por excelencia de la isla. Es notable que, a pesar de ser un centro laboral, los indicadores de Competencia Directa e Indirecta (aprox. $0.45$) y Lugares de Comercio presentan valores moderados; esto sugiere que el área está más orientada a la prestación de servicios profesionales y corporativos que al consumo masivo o retail que caracteriza a zonas como Midtown (Cluster 2).
+
+Finalmente, el perfil de seguridad muestra una relevancia moderada en Delitos de Transporte y Otros Delitos (aprox. $0.40$ y $0.25$ respectivamente), con una baja incidencia en delitos de propiedad. Esto refleja una dinámica de seguridad vinculada al flujo laboral y al tránsito diario de profesionales. En resumen, el perfil técnico del Cluster 4 es el de un hub de servicios corporativos y alta renta, definido por su densidad de oficinas y su atractivo para sectores económicos de élite, consolidándose como el centro de mando profesional de Manhattan.
+
+```{r}
+interpretar_barrios(4, zonas_asignadas)
+```
+
+
+## Mapa Manhattan K=4
+
+
+```{r}
+resumen_k4 <- data.frame(
+  Zona = datos$NOMBRE_ZONA,
+  Cluster = as.character(modelo_final$cluster))
+
+resumen_k4 <- resumen_k4 %>% mutate(Zona = gsub("^Chinatown$", "Chinatown-Two Bridges", Zona))
+
+nyc_map <- st_read(ruta_geojson, quiet = TRUE)
+manhattan_map <- nyc_map %>% filter(boroname == "Manhattan")
+
+mapa_final <- manhattan_map %>%
+  left_join(resumen_k4, by = c("ntaname" = "Zona"))
+
+ggplot(data = mapa_final) +
+  geom_sf(aes(fill = as.factor(Cluster)), color = "white", size = 0.1) +
+  scale_fill_manual(
+    values = c("4" = "blue", "1" = "#984ea3", "2" = "red", "3" = "darkgreen"),
+    name = "Cluster",
+    na.value = "#D3D3D3",
+    breaks = c("4", "1", "2", "3"), 
+    labels = c("C1", "C2", "C3", "C4") 
+  ) +
+  labs(
+    title = "Distribución Espacial (K=4)",
+    subtitle = "Mayor granularidad: Identificación de zonas Premium y Norte",
+    caption = "Basado en modelo K-Means con k=4"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "darkslategrey"),
+    legend.position = "right"
+  )
+```
+
+# Descarga de Dataset con Clusters Asignados K4
+
+```{r}
+datos_con_clusters <- datos %>%
+  left_join(resumen_k4, by = c("NOMBRE_ZONA" = "Zona"))
+
+datos_con_clusters <- datos_con_clusters %>%
+  mutate(across(where(is.numeric), ~ round(., 4)))
+
+reemplazos <- c("1" = "2", "2" = "3", "3" = "4", "4" = "1")
+
+datos_con_clusters <- datos_con_clusters %>%
+  mutate(
+    Cluster = as.character(Cluster),
+    Cluster = recode(Cluster, !!!reemplazos)
+  ) %>%
+  mutate(across(where(is.numeric), ~ round(., 4)))
+
+write_xlsx(datos_con_clusters, ruta_salida_kmeans)
+```
+
