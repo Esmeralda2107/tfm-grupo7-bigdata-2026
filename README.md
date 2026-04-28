@@ -106,6 +106,10 @@ Ejecutar la aplicación:
 
 La aplicación permite explorar de forma visual los resultados del modelo a partir de los datos y salidas analíticas del repositorio.
 
+También se encuentra disponible en Streamlit Cloud:
+
+**Streamlit App:** `https://site-selection-tfm-grupo7.streamlit.app/`
+
 ## 🗄️ Reproducción de la base de datos SQL
 
 La implementación SQL del proyecto se encuentra en la carpeta **`sql/`** y se apoya en las tablas contenidas en **`datos/base_datos/`**.
