@@ -1,19 +1,19 @@
-# 🧭 Escenarios de Decisión del Proyecto
+# 🧭 Escenarios de decisión del modelo de localización
 
 Este documento presenta la lógica metodológica de los **escenarios de decisión** construidos en el proyecto para comparar las zonas de Manhattan bajo distintos enfoques estratégicos de implantación comercial.
 
-Los escenarios se apoyan en el sistema de **scoring** desarrollado previamente y permiten ponderar de forma diferente las dimensiones del modelo según el objetivo de análisis.
+Una vez obtenidas las puntuaciones por dimensión, el modelo incorpora un **segundo nivel de ponderación** orientado a construir escenarios de decisión. En esta etapa, las seis dimensiones del modelo no se combinan con la misma importancia, sino que se ponderan de forma diferenciada según el objetivo estratégico de cada escenario.
 
-## 1. Lógica general de construcción
+## 1. Regla general de construcción
 
-Cada escenario se organiza en dos bloques de ponderación:
+Para la construcción de escenarios se definió una regla de distribución **60/40**:
 
 - **Dimensiones principales**: concentran el **60 %** del peso total.
-- **Dimensiones de contexto**: concentran el **40 %** del peso total.
+- **Dimensiones de contexto**: concentran el **40 %** restante.
 
-Esta estructura permite priorizar determinadas dimensiones estratégicas sin perder la visión integral del entorno urbano, económico y territorial.
+Esta proporción se adoptó para dar un predominio claro al enfoque estratégico principal sin volver marginales las demás dimensiones, cuya influencia sigue siendo relevante en la decisión de localización. De este modo, se busca mantener escenarios diferenciados, pero suficientemente equilibrados.
 
-Las dimensiones utilizadas en el modelo son:
+Las seis dimensiones utilizadas en el modelo son:
 
 - **Censo (Demanda)**
 - **Movilidad**
@@ -22,11 +22,21 @@ Las dimensiones utilizadas en el modelo son:
 - **Competencia**
 - **Coste**
 
-## 2. Escenarios definidos en el proyecto
+## 2. Criterio de selección de escenarios
+
+La selección de las dimensiones principales en cada escenario responde a los **tres ejes estratégicos del modelo de localización**:
+
+- **Potencial de demanda**
+- **Eficiencia operativa y atracción de flujo**
+- **Viabilidad comercial y riesgo controlado**
+
+A partir de esta lógica, se construyeron tres escenarios de decisión.
+
+## 3. Escenarios definidos en el proyecto
 
 ### Escenario 1. Potencial de demanda
 
-Este escenario prioriza la capacidad de atracción comercial de la zona, poniendo el foco en la presencia de demanda potencial y en aquellos atributos territoriales que favorecen la captación de clientes.
+Este escenario prioriza las dimensiones más vinculadas con la capacidad de atracción comercial de la zona.
 
 #### Dimensiones principales (60 %)
 - **Censo (Demanda)**: 35 %
@@ -39,13 +49,13 @@ Este escenario prioriza la capacidad de atracción comercial de la zona, poniend
 - **Competencia**: 5 %
 
 #### Lectura estratégica
-Este escenario resulta especialmente útil cuando el objetivo es identificar zonas con mayor capacidad de consumo potencial, dinamismo comercial y presencia de perfiles demográficos compatibles con la propuesta del negocio.
+Este escenario permite identificar zonas con mayor capacidad de atracción comercial, apoyándose en variables demográficas, urbanas y funcionales asociadas a la demanda potencial.
 
 ---
 
 ### Escenario 2. Eficiencia y flujo
 
-Este escenario prioriza las condiciones urbanas que favorecen la operación cotidiana del negocio, especialmente en modelos orientados a la rotación, el take-away y la captación de flujo peatonal.
+Este escenario otorga mayor peso a las condiciones urbanas más relevantes para un modelo fast casual orientado al take-away.
 
 #### Dimensiones principales (60 %)
 - **Movilidad**: 35 %
@@ -58,13 +68,13 @@ Este escenario prioriza las condiciones urbanas que favorecen la operación coti
 - **Competencia**: 5 %
 
 #### Lectura estratégica
-Este escenario permite identificar zonas con elevada accesibilidad, intensidad de tránsito y visibilidad comercial, especialmente favorables para formatos de restauración rápida o consumo de conveniencia.
+Este escenario permite priorizar zonas con alta conectividad, intensidad de flujo y actividad urbana compatible con un negocio de servicio rápido y consumo ágil.
 
 ---
 
 ### Escenario 3. Viabilidad y riesgo
 
-Este escenario prioriza los factores que inciden en la estabilidad operativa y económica de la implantación, incorporando una lectura más defensiva orientada a coste, seguridad y saturación competitiva.
+Este escenario enfatiza los factores que inciden con mayor fuerza en la estabilidad operativa y económica de la implantación, así como en la saturación competitiva del entorno.
 
 #### Dimensiones principales (60 %)
 - **Seguridad**: 20 %
@@ -77,24 +87,26 @@ Este escenario prioriza los factores que inciden en la estabilidad operativa y e
 - **Puntos de interés**: 15 %
 
 #### Lectura estratégica
-Este escenario permite identificar zonas potencialmente más equilibradas desde el punto de vista operativo, económico y competitivo, especialmente en contextos donde la viabilidad de implantación y el control del riesgo son prioritarios.
+Este escenario permite priorizar zonas potencialmente más equilibradas desde el punto de vista operativo, económico y competitivo, incorporando una lectura más defensiva del territorio.
 
-## 3. Interpretación de los escenarios
+## 4. Cálculo de la puntuación final por escenario
 
-Los tres escenarios no representan resultados incompatibles, sino **formas alternativas de leer el territorio** según distintos criterios estratégicos de decisión.
+Con estas ponderaciones, se calcula una puntuación final para cada zona en cada escenario mediante una suma ponderada de las puntuaciones obtenidas previamente en las seis dimensiones.
 
-En consecuencia:
+La expresión general utilizada es la siguiente:
 
-- una zona puede mostrar un rendimiento elevado en un escenario y moderado en otro,
-- las diferencias entre escenarios permiten identificar fortalezas y debilidades territoriales,
-- y la comparación conjunta facilita una evaluación más rica de las alternativas de implantación.
+\[
+S_{is} = \sum_{d=1}^{6} W_{ds} \cdot D_{id}
+\]
 
-## 4. Relación con la aplicación Streamlit
+donde:
 
-La aplicación desarrollada en **Streamlit** toma estos escenarios como configuraciones de referencia para la exploración interactiva del territorio.
+- \(S_{is}\) representa la puntuación final de la zona \(i\) en el escenario \(s\),
+- \(W_{ds}\) es el peso asignado a la dimensión \(d\) dentro del escenario,
+- \(D_{id}\) corresponde a la puntuación obtenida previamente por la zona en dicha dimensión.
 
-Aunque cada escenario parte de los pesos por defecto aquí descritos, la aplicación permite **ajustar los pesos** dentro de la lógica general del modelo para explorar distintas sensibilidades de decisión.
+Bajo esta estructura, el modelo genera una puntuación global de **0 a 100** para cada zona en cada escenario, permitiendo comparar cómo cambia la priorización territorial según el énfasis estratégico aplicado.
 
-## 5. Finalidad dentro del proyecto
+## 5. Finalidad dentro del modelo
 
-La construcción de escenarios constituye la última fase analítica del proyecto y permite traducir el sistema de scoring en una herramienta útil para la interpretación estratégica del territorio, apoyando la comparación de alternativas y la toma de decisiones en contexto urbano.
+La construcción de escenarios constituye la fase en la que el sistema de scoring se transforma en una herramienta de apoyo a la decisión. Su finalidad es permitir una lectura estratégica diferenciada del territorio, mostrando cómo varía la recomendación de localización cuando cambian las prioridades del negocio.
