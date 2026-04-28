@@ -1,6 +1,6 @@
 # 🗂️ Datos Crudos
 
-Este directorio reúne las **fuentes originales** utilizadas en el proyecto como punto de partida para la construcción del sistema de datos del TFM. Su contenido corresponde a la etapa **cruda**, por lo que los archivos aquí almacenados conservan, en la medida de lo posible, su estructura de origen y no han sido sometidos todavía al proceso completo de limpieza o transformación analítica.
+Este directorio reúne las **fuentes originales** utilizadas en el proyecto como punto de partida para la construcción del sistema de datos del TFM. Su contenido corresponde a la etapa **cruda**, por lo que los archivos aquí almacenados conservan su estructura de origen y no han sido sometidos todavía al proceso completo de limpieza o transformación analítica.
 
 Las fuentes crudas se organizan por dimensión temática:
 
@@ -19,4 +19,4 @@ Esta carpeta representa la **primera capa de datos del proyecto**. A partir de e
 - reestructuración de variables,
 - homologación de formatos,
 - integración territorial,
-- y consolidación del dataset maestro.
+- y construcción del dataset maestro.
